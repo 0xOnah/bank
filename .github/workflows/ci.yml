@@ -7,20 +7,25 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
     name: Test
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.23.2'
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22.x'
 
-    - name: Build
-      run: go build -v ./...
+      - name: Install Task
+        run: |
+          curl -sL https://taskfile.dev/install.sh | sh
+          sudo mv ./bin/task /usr/local/bin/
 
-    - name: Test
-      run: task test
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: task test
