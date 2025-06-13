@@ -1,0 +1,56 @@
+version: '3'
+
+dotenv: ['.env', '{{.ENV}}/.env', '{{.HOME}}/.env']
+
+tasks:
+  build:
+    desc: "build the go binary"
+    cmds:
+      - go build -o bin/app cmd/server/main.go
+  test:
+    desc: "run test"
+    cmds:
+     - go test -v -cover -count=1 ./...
+  lint:
+    cmds:
+      - golangci-lint run
+  run:
+    desc: "run docker compose up"
+    cmds:
+      - docker compose up --build
+  migrations:
+    desc: "create a new migration file name={filename}"
+    cmds:
+    - migrate create -ext=sql -dir=./db/migrations -seq {{.name}}
+  migrations-up:
+    desc: "run up migrations"
+    cmds:
+    - migrate -database {{.DSN}} -path=./db/migrations up
+  migrations-down: 
+    desc: "run down migrations"
+    cmds:
+    - migrate -database {{.DSN}} -path=./db/migrations down
+  migrations-force:
+    desc: "run force migrations"
+    cmds:
+      - echo "Forcing migration version {{.version}}"
+      - migrate -database={{.DSN}} -path=./db/migrations force {{.version}}
+  integration-test:
+    cmds:
+    - docker compose up -d db
+    - go test -tags=integration -count=1 -v ./...
+    env:
+      DB_USERNAME: $DB_USERNAME
+      DB_PASSWORD: $DB_PASSWORD
+      DB_HOST: $DB_HOST
+      DB_PORT: $DB_PORT
+      SSL_MODE: SSL_MODE
+  e2e:
+    desc: "end to end test."
+    cmds:
+      - docker compose up -d --build
+      - go test -tags=e2e -count=1 -v ./...
+  sqlc:
+    desc: "sqlc code generate"
+    cmds:
+    - sqlc generate 
