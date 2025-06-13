@@ -40,7 +40,12 @@ jobs:
         run: |
           curl -sL https://taskfile.dev/install.sh | sh
           sudo mv ./bin/task /usr/local/bin/
-
+        
+        - name: Install migrate
+          run: |
+            curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+            sudo mv migrate /usr/local/bin/
+        
       - name: Build
         run: go build -v ./...
 
