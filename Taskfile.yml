@@ -44,7 +44,7 @@ tasks:
       DB_PASSWORD: $DB_PASSWORD
       DB_HOST: $DB_HOST
       DB_PORT: $DB_PORT
-      SSL_MODE: SSL_MODE
+      SSL_MODE: $SSL_MODE
   e2e:
     desc: "end to end test."
     cmds:

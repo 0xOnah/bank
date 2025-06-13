@@ -10,23 +10,21 @@ jobs:
   build:
     name: Test
     runs-on: ubuntu-latest
-       # Service containers to run with `container-job`
+
     services:
-      # Label used to access the service container
       postgres:
-        # Docker Hub image
-        image: postgres:17.5
-        # Provide the password for postgres
+        image: postgres:15
         env:
           POSTGRES_PASSWORD: secret
           POSTGRES_USER: postgres
           POSTGRES_DB: bank
-        # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
       - uses: actions/checkout@v4
@@ -40,17 +38,19 @@ jobs:
         run: |
           curl -sL https://taskfile.dev/install.sh | sh
           sudo mv ./bin/task /usr/local/bin/
-        
-        - name: Install migrate
-          run: |
-            curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
-            sudo mv migrate /usr/local/bin/
-        
+
+      - name: Install migrate
+        run: |
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+          sudo mv migrate /usr/local/bin/
+
       - name: Build
         run: go build -v ./...
 
       - name: Run migrations
+        env:
+          DB_SOURCE: postgres://postgres:secret@localhost:5432/bank?sslmode=disable
         run: task migrations-up
-        
+
       - name: Test
         run: task test
