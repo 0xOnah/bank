@@ -5,7 +5,10 @@ sql:
   engine: "postgresql"
   gen:
     go: 
-      package: "db" #generated go package name
-      out: "db/store"
+      package: "sqlc" #generated go package name
+      out: "db/sqlc"
+      emit_empty_slices: true
+      emit_result_struct_pointers: true
+      # emit_interface: true
       
  

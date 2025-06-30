@@ -1,4 +1,4 @@
-package db
+package sqlc
 
 import (
 	"context"
@@ -6,18 +6,22 @@ import (
 	"fmt"
 )
 
-type Store struct {
+// type Store interface {
+// 	*Queries
+// 	TransferTx(ctx context.Context, arg TransferTxParams) (*TransferTxResult, error)
+// }
+type SQLStore struct {
 	*Queries
 	db *sql.DB
 }
 
-func NewStore(db *sql.DB) *Store {
-	return &Store{
+func NewStore(db *sql.DB) *SQLStore {
+	return &SQLStore{
 		db:      db,
 		Queries: New(db),
 	}
 }
-func (s *Store) execTX(ctx context.Context, fn func(*Queries) error) error {
+func (s *SQLStore) execTX(ctx context.Context, fn func(*Queries) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -40,16 +44,16 @@ type TransferTxParams struct {
 }
 
 type TransferTxResult struct {
-	Transfer    Transfer
-	FromAccount Account
-	ToAccount   Account
-	FromEntry   Entry
-	ToEntry     Entry
+	Transfer    *Transfer
+	FromAccount *Account
+	ToAccount   *Account
+	FromEntry   *Entry
+	ToEntry     *Entry
 }
 
 // TransferTx performs a money transfer from one account to another.
 // It creates a transfer record, adds account entries, and updates balances in a single transaction.
-func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (*TransferTxResult, error) {
+func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (*TransferTxResult, error) {
 	var result TransferTxResult
 
 	err := store.execTX(ctx, func(q *Queries) error {
@@ -104,7 +108,7 @@ func addMoney(
 	amount1 int64,
 	accountID2 int64,
 	amount2 int64,
-) (account1 Account, account2 Account, err error) {
+) (account1 *Account, account2 *Account, err error) {
 	account1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
 		ID:     accountID1,
 		Amount: amount1,

@@ -1,4 +1,4 @@
-package db
+package sqlc
 
 import (
 	"context"
@@ -34,7 +34,7 @@ func TestListEntries(t *testing.T) {
 		Amount:    util.RandomMoney(),
 	}
 
-	for i := 0; i < 10; i++ { 
+	for i := 0; i < 10; i++ {
 		value, err := testQueries.CreateEntry(context.Background(), arg)
 		require.NoError(t, err)
 		require.NotEmpty(t, value)

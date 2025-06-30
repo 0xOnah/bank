@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 )
-//random number generator pacakge is needed for running the tests within the program
-const alphabet = "abcdefghijklmnopqrstuvwxyz"
 
+// random number generator pacakge is needed for running the tests within the program
+const alphabet = "abcdefghijklmnopqrstuvwxyz"
 
 var seededRand *rand.Rand
 

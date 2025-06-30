@@ -1,4 +1,4 @@
-package db
+package sqlc
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"github.com/onahvictor/bank/util"
 	"github.com/stretchr/testify/require"
 )
-
 
 func TestCreateAccount(t *testing.T) {
 	createRandomAccount(t)
@@ -71,7 +70,7 @@ func TestListAccount(t *testing.T) {
 	accounts, err := testQueries.ListAccount(context.Background(), arg)
 	require.NoError(t, err)
 	require.Len(t, accounts, 5)
-	
+
 	for _, account := range accounts {
 		require.NotEmpty(t, account)
 	}

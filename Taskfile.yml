@@ -1,6 +1,6 @@
 version: '3'
 
-dotenv: ['.env', '{{.ENV}}/.env', '{{.HOME}}/.env']
+dotenv: ['app.env', '{{.ENV}}/.env', '{{.HOME}}/.env']
 
 tasks:
   build:
@@ -54,3 +54,11 @@ tasks:
     desc: "sqlc code generate"
     cmds:
     - sqlc generate 
+  server:
+    desc: "start the go servver"
+    cmds:
+    - go run cmd/main.go
+  mock:
+    desc: "generate mock"
+    cmds:
+    - mockgen -package mockdb -destination db/mock/{{.FileName}}.go github.com/onahvictor/bank/db/sqlc {{.Location}}

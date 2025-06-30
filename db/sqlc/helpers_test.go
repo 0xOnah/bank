@@ -1,4 +1,4 @@
-package db
+package sqlc
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func createRandomAccount(t *testing.T) Account {
 	require.NotZero(t, account.ID)
 	require.NotZero(t, account.CreatedAt)
 
-	return account
+	return *account
 }
 
 func createRandomEntry(t *testing.T) Entry {
@@ -43,5 +43,5 @@ func createRandomEntry(t *testing.T) Entry {
 	require.NotEmpty(t, entry.ID)
 	require.NotEmpty(t, entry.CreatedAt)
 
-	return entry
+	return *entry
 }

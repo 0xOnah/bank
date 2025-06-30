@@ -1,4 +1,4 @@
-package db
+package sqlc
 
 import (
 	"database/sql"
@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	_ "github.com/lib/pq"
+	"github.com/onahvictor/bank/config"
 )
 
 const (
 	dbDriver = "postgres"
-	dbSource = "postgresql://postgres:secret@localhost:5432/bank?sslmode=disable" //testdatabase
 )
 
 var testQueries *Queries
@@ -19,7 +19,12 @@ var testDB *sql.DB
 
 func TestMain(m *testing.M) {
 	var err error
-	testDB, err = sql.Open(dbDriver, dbSource)
+	cfg, err := config.LoadConfig("../..")
+	if err != nil {
+		log.Fatal("cannot load config", err)
+	}
+
+	testDB, err = sql.Open(dbDriver, cfg.DSN)
 	if err != nil {
 		log.Fatal("cannot connect to db", err)
 	}
