@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/onahvictor/bank/internal/db/sqlc"
 	"github.com/onahvictor/bank/internal/entity"
@@ -12,9 +11,9 @@ type userRepo struct {
 	db *sqlc.SQLStore
 }
 
-func NewUserRepo(db *sql.DB) *userRepo {
+func NewUserRepo(db *sqlc.SQLStore) *userRepo {
 	return &userRepo{
-		db: sqlc.NewStore(db),
+		db: db,
 	}
 }
 func ToUser(u *sqlc.User) *entity.User {

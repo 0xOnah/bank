@@ -26,16 +26,19 @@ func Run() {
 	//repo setup
 	accountRepo := repo.NewAccountRepo(store)
 	transfRepo := repo.NewTransferRepo(store)
+	userRepo := repo.NewUserRepo(store)
 
 	//services setup
 	accountSvc := service.NewAccountService(accountRepo)
 	transferSvc := service.NewTransferService(transfRepo, accountRepo)
+	usrSvc := service.NewUserService(userRepo)
 	//handlers
 	accountHand := httptransport.NewAccountHandler(accountSvc)
 	transfHand := httptransport.NewTranserHandler(transferSvc)
+	userHand := httptransport.NewUserHandler(usrSvc)
 
 	//router & routes setup
-	router := httptransport.NewRouter(accountHand, transfHand)
+	router := httptransport.NewRouter(accountHand, transfHand, userHand)
 
 	if err := router.Serve(config.PORT); err != nil {
 		log.Fatal(err)

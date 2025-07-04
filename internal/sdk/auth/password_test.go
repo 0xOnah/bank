@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,7 +26,4 @@ func TestHashPassword(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotEqual(t, hash, hash1)
-	fmt.Println(hash)
-	fmt.Println(hash1)
-
 }

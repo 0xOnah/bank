@@ -115,7 +115,7 @@ func TestGetAccountByID(t *testing.T) {
 			accountRepo := mockdb.NewMockAccountRepository(ctrl)
 			accountSvc := service.NewAccountService(accountRepo)
 			httpHandler := httptransport.NewAccountHandler(accountSvc)
-			router := httptransport.NewRouter(httpHandler, nil)
+			router := httptransport.NewRouter(httpHandler, nil,nil)
 
 			value.buildStubs(accountRepo)
 

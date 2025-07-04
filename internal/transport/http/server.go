@@ -19,7 +19,7 @@ type Router struct {
 	Mux *gin.Engine
 }
 
-func NewRouter(accountHand *AccountHandler, transferHand *TransferHandler) *Router {
+func NewRouter(accountHand *AccountHandler, transferHand *TransferHandler, userHand *UserHandler) *Router {
 	router := gin.Default()
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -27,6 +27,7 @@ func NewRouter(accountHand *AccountHandler, transferHand *TransferHandler) *Rout
 	}
 	accountHand.MapAccountRoutes(router)
 	transferHand.MapAccountRoutes(router)
+	userHand.MapAccountRoutes(router)
 
 	routerSetup := &Router{
 		Mux: router,
