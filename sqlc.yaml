@@ -1,12 +1,12 @@
 version: "2"
 sql:
-- schema: "./db/migrations"
-  queries: "./db/queries"
+- schema: "./internal/db/migrations"
+  queries: "./internal/db/queries"
   engine: "postgresql"
   gen:
     go: 
       package: "sqlc" #generated go package name
-      out: "db/sqlc"
+      out: "internal/db/sqlc"
       emit_empty_slices: true
       emit_result_struct_pointers: true
       # emit_interface: true

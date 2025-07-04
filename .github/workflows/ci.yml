@@ -10,6 +10,8 @@ jobs:
   build:
     name: Test
     runs-on: ubuntu-latest
+    # env: 
+      # DSN: ${{ secrets.DSN }}
 
     services:
       postgres:

@@ -3,12 +3,12 @@ package main
 import (
 	"log"
 
-	"github.com/onahvictor/bank/config"
-	"github.com/onahvictor/bank/db/client"
-	"github.com/onahvictor/bank/db/repo"
-	"github.com/onahvictor/bank/db/sqlc"
-	"github.com/onahvictor/bank/service"
-	httptransport "github.com/onahvictor/bank/transport/http"
+	"github.com/onahvictor/bank/internal/config"
+	"github.com/onahvictor/bank/internal/db/client"
+	"github.com/onahvictor/bank/internal/db/repo"
+	"github.com/onahvictor/bank/internal/db/sqlc"
+	"github.com/onahvictor/bank/internal/service"
+	httptransport "github.com/onahvictor/bank/internal/transport/http"
 )
 
 func Run() {
@@ -35,7 +35,7 @@ func Run() {
 	transfHand := httptransport.NewTranserHandler(transferSvc)
 
 	//router & routes setup
-	router := httptransport.NewRouter(accountHand,transfHand)
+	router := httptransport.NewRouter(accountHand, transfHand)
 
 	if err := router.Serve(config.PORT); err != nil {
 		log.Fatal(err)

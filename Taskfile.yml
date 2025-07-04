@@ -25,11 +25,11 @@ tasks:
   migrations-up:
     desc: "run up migrations"
     cmds:
-    - migrate -database {{.DSN}} -path=./db/migrations up
+    - migrate -database {{.DSN}} -path=./internal/db/migrations -verbose up
   migrations-down: 
     desc: "run down migrations"
     cmds:
-    - migrate -database {{.DSN}} -path=./db/migrations down
+    - migrate -database {{.DSN}} -path=./internal/db/migrations -verbose down
   migrations-force:
     desc: "run force migrations"
     cmds:
@@ -61,4 +61,4 @@ tasks:
   mock:
     desc: "generate mock"
     cmds:
-    - mockgen -package mockdb -destination db/mock/{{.FileName}}.go github.com/onahvictor/bank/db/sqlc {{.Location}}
+    - mockgen -package mockdb -destination internal/db/mock/{{.filename}}.go github.com/onahvictor/bank/internal/service {{.location}}
