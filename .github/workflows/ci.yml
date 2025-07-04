@@ -10,8 +10,8 @@ jobs:
   build:
     name: Test
     runs-on: ubuntu-latest
-    # env: 
-      # DSN: ${{ secrets.DSN }}
+    env: 
+      DSN: ${{ secrets.DSN }}
 
     services:
       postgres:
@@ -52,8 +52,8 @@ jobs:
 
       - name: Run migrations
         env:
-          DB_SOURCE: postgres://postgres:secret@localhost:5432/bank?sslmode=disable
-        run: task migrations-up
+          DSN: ${{ secrets.DSN }}
+        run: task migrations-up -- DSN=$DSN
 
       - name: Test
         run: task test
