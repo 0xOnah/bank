@@ -1,6 +1,6 @@
 -- name: CreateAccount :one
 INSERT INTO accounts (
-    owner, 
+    owner,
     balance, 
     currency
 )
@@ -18,8 +18,9 @@ FOR NO KEY UPDATE;
 
 -- name: ListAccount :many
 SELECT * FROM accounts
+WHERE owner= $3
 ORDER BY id
-LIMIT $1 OFFSET $2;
+LIMIT $1 OFFSET $2 ;
 
 -- name: UpdateAccount :one
 UPDATE accounts

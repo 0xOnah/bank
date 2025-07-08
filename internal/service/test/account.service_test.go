@@ -1,4 +1,5 @@
 package service_test
+
 //this test uses the mock for testing
 import (
 	"bytes"
@@ -8,10 +9,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	mockdb "github.com/onahvictor/bank/internal/db/mock"
 	"github.com/onahvictor/bank/internal/db/repo"
 	"github.com/onahvictor/bank/internal/entity"
+	"github.com/onahvictor/bank/internal/sdk/auth"
 	"github.com/onahvictor/bank/internal/service"
 	httptransport "github.com/onahvictor/bank/internal/transport/http"
 	"github.com/onahvictor/bank/internal/util"
@@ -41,6 +44,11 @@ func requireBodyMatch(t *testing.T, body *bytes.Buffer, account *entity.Account)
 }
 
 func TestGetAccountByID(t *testing.T) {
+	token, err := auth.NewJWTMaker("123456789123456789123456789123456789")
+	require.NoError(t, err)
+	payload, err := token.GenerateToken("user", time.Minute*15)
+	require.NoError(t, err)
+	
 	expected := randomAccount()
 
 	type TestCase struct {
@@ -114,18 +122,18 @@ func TestGetAccountByID(t *testing.T) {
 
 			accountRepo := mockdb.NewMockAccountRepository(ctrl)
 			accountSvc := service.NewAccountService(accountRepo)
-			httpHandler := httptransport.NewAccountHandler(accountSvc)
-			router := httptransport.NewRouter(httpHandler, nil,nil)
+			httpHandler := httptransport.NewAccountHandler(accountSvc, nil)
+			router := httptransport.NewRouter(httpHandler, nil, nil)
 
 			value.buildStubs(accountRepo)
 
 			recorder := httptest.NewRecorder()
 			url := fmt.Sprintf("/accounts/%d", value.accountID)
 			req, err := http.NewRequest(http.MethodGet, url, nil)
+			req.Header.Set("Authorization", payload)
 			require.NoError(t, err)
 
 			router.Mux.ServeHTTP(recorder, req)
-
 			value.checkResponse(t, recorder)
 		})
 	}

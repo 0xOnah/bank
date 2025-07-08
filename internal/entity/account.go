@@ -2,8 +2,7 @@ package entity
 
 import "time"
 
-type Users struct{
-	
+type Users struct {
 }
 
 type Account struct {
@@ -31,6 +30,7 @@ type UpdateAccountInput struct {
 }
 
 type ListAccountInput struct {
+	User   string
 	Limit  int32
 	Offset int32
 }

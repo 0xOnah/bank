@@ -3,39 +3,40 @@ package httptransport
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/onahvictor/bank/internal/entity"
+	"github.com/onahvictor/bank/internal/sdk/auth"
 	"github.com/onahvictor/bank/internal/service"
+	"github.com/onahvictor/bank/internal/transport/middleware"
 	"github.com/onahvictor/bank/internal/util"
 )
 
 type AccountService interface {
 	CreateAccount(ctx context.Context, input entity.CreateAccountInput) (*entity.Account, error)
-	GetAccountByID(ctx context.Context, id int64) (*entity.Account, error)
+	GetAccountByID(ctx context.Context, username string, id int64) (*entity.Account, error)
 	ListAccount(ctx context.Context, arg entity.ListAccountInput) ([]*entity.Account, error)
 }
 type AccountHandler struct {
 	accSvc AccountService
+	token  auth.Auntenticator
 }
 
-func NewAccountHandler(svc *service.AccountService) *AccountHandler {
-	return &AccountHandler{accSvc: svc}
+func NewAccountHandler(svc *service.AccountService, token auth.Auntenticator) *AccountHandler {
+	return &AccountHandler{accSvc: svc, token: token}
 }
 
 func (a *AccountHandler) MapAccountRoutes(r *gin.Engine) {
-	r.POST("/accounts", a.CreateAccount)
-	r.GET("/accounts/:id", a.GetAccountByID)
-	r.GET("/accounts", a.listAccount)
+	r.POST("/accounts", middleware.Authenication(a.token), a.CreateAccount)
+	r.GET("/accounts/:id", middleware.Authenication(a.token), a.GetAccountByID)
+	r.GET("/accounts", middleware.Authenication(a.token), a.listAccount)
 
 }
 
 type CreateAccountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
-	Currency string `json:"currency" binding:"required,oneof=USD EUR"`
+	Currency string `json:"currency" binding:"required,currency"`
 }
 
 // create account
@@ -45,14 +46,14 @@ func (a *AccountHandler) CreateAccount(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
+	payload := ctx.MustGet(middleware.AuthorizationPayLoadKey).(*auth.Payload)
 
 	account, err := a.accSvc.CreateAccount(ctx, entity.CreateAccountInput{
-		Owner:    req.Owner,
+		Owner:    payload.Username,
 		Currency: req.Currency,
 		Balance:  0,
 	})
 	if err != nil {
-		fmt.Println(err)
 		var appErr *service.AppError
 		if ok := errors.As(err, &appErr); ok {
 			ctx.JSON(mapErrorToStatus(appErr), util.ErrorResponse(err))
@@ -85,8 +86,9 @@ func (a *AccountHandler) GetAccountByID(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
+	payload := ctx.MustGet(middleware.AuthorizationPayLoadKey).(*auth.Payload)
 
-	account, err := a.accSvc.GetAccountByID(ctx.Request.Context(), req.ID)
+	account, err := a.accSvc.GetAccountByID(ctx.Request.Context(), payload.Username, req.ID)
 	if err != nil {
 		var appErr *service.AppError
 		if ok := errors.As(err, &appErr); ok {
@@ -94,7 +96,7 @@ func (a *AccountHandler) GetAccountByID(ctx *gin.Context) {
 			slog.Debug("Unexpected service error in GetAccountByID:",
 				slog.Int("statusCode", statusCode),
 				slog.String("message", appErr.Message),
-				slog.Any("error", appErr.Err)) 
+				slog.Any("error", appErr.Err))
 			ctx.JSON(statusCode, util.ErrorResponse(err))
 			return
 		}
@@ -121,7 +123,9 @@ func (a *AccountHandler) listAccount(ctx *gin.Context) {
 		return
 	}
 
+	payload := ctx.MustGet(middleware.AuthorizationPayLoadKey).(*auth.Payload)
 	accounts, err := a.accSvc.ListAccount(ctx.Request.Context(), entity.ListAccountInput{
+		User:   payload.Username,
 		Limit:  int32(arg.PageSize),
 		Offset: int32(arg.PageID-1) * int32(arg.PageSize),
 	})

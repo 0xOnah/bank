@@ -5,14 +5,12 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
 jobs:
   build:
     name: Test
     runs-on: ubuntu-latest
     env: 
       DSN: ${{ secrets.DSN }}
-
     services:
       postgres:
         image: postgres:15
@@ -27,38 +25,30 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.22.x'
-
       - name: Install Task
         run: |
           curl -sL https://taskfile.dev/install.sh | sh
           sudo mv ./bin/task /usr/local/bin/
-
       - name: Install migrate
         run: |
           curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
           sudo mv migrate /usr/local/bin/
           which migrate
-
       - name: Build
         run: go build -v ./...
-
       - name: Run migrations
         env:
           DSN: ${{ secrets.DSN }}
         run: task migrations-up -- DSN=$DSN
-
       - name: Write app.env for CI
         run: |
             echo "DSN=postgresql://postgres:secret@localhost:5432/bank?sslmode=disable" > app.env
              echo "PORT=0.0.0.0:8080" >> app.env
-
       - name: Test
         run: task test

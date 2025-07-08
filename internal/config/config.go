@@ -1,10 +1,16 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"time"
+
+	"github.com/spf13/viper"
+)
 
 type Config struct {
-	DSN  string `mapstructure:"DSN"`
-	PORT string `mapstructure:"PORT"`
+	DSN                     string `mapstructure:"DSN"`
+	PORT                    string `mapstructure:"PORT"`
+	TOKEN_SYMMETRIC_KEY     string `mapstructure:"TOKEN_SYMMETRIC_KEY"`
+	ACCESS_TOKEN_DURATATION time.Duration `mapstructure:"ACCESS_TOKEN_DURATATION"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

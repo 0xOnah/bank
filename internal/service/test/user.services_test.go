@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/onahvictor/bank/internal/config"
 	mockdb "github.com/onahvictor/bank/internal/db/mock"
 	"github.com/onahvictor/bank/internal/entity"
 	"github.com/onahvictor/bank/internal/sdk/auth"
@@ -55,19 +56,21 @@ func TestCreateUser(t *testing.T) {
 		name          string
 		body          any
 		buildStubs    func(repo *mockdb.MockUserRepository)
-		checkResponse func(t *testing.T, r *httptest.ResponseRecorder)
+		checkResponse func(r *httptest.ResponseRecorder)
 	}
 	var testCases = TestCases{
-		{name: "OK: Account Created",
+		{
+			name: "OK: Account Created",
 			body: map[string]string{
-				"username": "victor",
+				"username": user.Username,
 				"password": "secret",
-				"fullname": "victor onah",
-				"email":    "onahvictor@gmail.com"},
+				"fullname": user.FullName,
+				"email":    user.Email.String(),
+			},
 			buildStubs: func(repo *mockdb.MockUserRepository) {
 				repo.EXPECT().CreateUser(gomock.Any(), EqCreateUser(user, "secret")).Times(1).Return(&user, nil)
 			},
-			checkResponse: func(t *testing.T, r *httptest.ResponseRecorder) {
+			checkResponse: func(r *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, r.Code)
 			},
 		},
@@ -77,33 +80,35 @@ func TestCreateUser(t *testing.T) {
 			buildStubs: func(repo *mockdb.MockUserRepository) {
 				repo.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
-			checkResponse: func(t *testing.T, r *httptest.ResponseRecorder) {
+			checkResponse: func(r *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusBadRequest, r.Code)
 			},
 		}, {
 			name: "Internal server Error",
 			body: map[string]string{
-				"username": "victor",
+				"username": user.Username,
 				"password": "secret",
-				"fullname": "victor onah",
-				"email":    "onahvictor@gmail.com"},
+				"fullname": user.FullName,
+				"email":    user.Email.String(),
+			},
 			buildStubs: func(repo *mockdb.MockUserRepository) {
 				repo.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Times(1).Return(nil, sql.ErrConnDone)
 			},
-			checkResponse: func(t *testing.T, r *httptest.ResponseRecorder) {
+			checkResponse: func(r *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, r.Code)
 			},
-		},{
+		}, {
 			name: "Wrong Email",
 			body: map[string]string{
-				"username": "victor",
+				"username": user.Username,
 				"password": "secret",
-				"fullname": "victor onah",
-				"email":    "onahvictorgmail.com"},
+				"fullname": user.FullName,
+				"email":    "invalid_email",
+			},
 			buildStubs: func(repo *mockdb.MockUserRepository) {
 				repo.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
-			checkResponse: func(t *testing.T, r *httptest.ResponseRecorder) {
+			checkResponse: func(r *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusBadRequest, r.Code)
 			},
 		},
@@ -114,9 +119,9 @@ func TestCreateUser(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			repo := mockdb.NewMockUserRepository(ctrl)
-
-			userSvc := service.NewUserService(repo)
-			httpHandler := httptransport.NewUserHandler(userSvc)
+			maker, _ := auth.NewJWTMaker("secret")
+			userSvc := service.NewUserService(repo, nil, config.Config{})
+			httpHandler := httptransport.NewUserHandler(userSvc, maker)
 			router := httptransport.NewRouter(nil, nil, httpHandler)
 
 			data, err := json.Marshal(value.body)
@@ -124,12 +129,13 @@ func TestCreateUser(t *testing.T) {
 
 			reader := bytes.NewReader([]byte(data))
 			req, err := http.NewRequest(http.MethodPost, "/user", reader)
+			req.Header.Set("Content-Type", "application/json")
 			require.NoError(t, err)
 
 			value.buildStubs(repo)
 			rec := httptest.NewRecorder()
 			router.Mux.ServeHTTP(rec, req)
-			value.checkResponse(t, rec)
+			value.checkResponse(rec)
 		})
 	}
 }

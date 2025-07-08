@@ -3,6 +3,8 @@ package repo
 import "errors"
 
 var (
+	ErrUserNotFound = errors.New("user not found")
+	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrRecordNotFound    = errors.New("record not found")
 	ErrEditConflict      = errors.New("edit confilict")
 	ErrDuplicateUsername = errors.New("username already exists")

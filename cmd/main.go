@@ -7,6 +7,7 @@ import (
 	"github.com/onahvictor/bank/internal/db/client"
 	"github.com/onahvictor/bank/internal/db/repo"
 	"github.com/onahvictor/bank/internal/db/sqlc"
+	"github.com/onahvictor/bank/internal/sdk/auth"
 	"github.com/onahvictor/bank/internal/service"
 	httptransport "github.com/onahvictor/bank/internal/transport/http"
 )
@@ -23,6 +24,10 @@ func Run() {
 
 	store := sqlc.NewStore(db.Client)
 
+	auth, err := auth.NewJWTMaker(config.TOKEN_SYMMETRIC_KEY)
+	if err != nil {
+		log.Fatal("auth token creation failed", err)
+	}
 	//repo setup
 	accountRepo := repo.NewAccountRepo(store)
 	transfRepo := repo.NewTransferRepo(store)
@@ -31,11 +36,12 @@ func Run() {
 	//services setup
 	accountSvc := service.NewAccountService(accountRepo)
 	transferSvc := service.NewTransferService(transfRepo, accountRepo)
-	usrSvc := service.NewUserService(userRepo)
+	usrSvc := service.NewUserService(userRepo, auth, config)
 	//handlers
-	accountHand := httptransport.NewAccountHandler(accountSvc)
-	transfHand := httptransport.NewTranserHandler(transferSvc)
-	userHand := httptransport.NewUserHandler(usrSvc)
+
+	accountHand := httptransport.NewAccountHandler(accountSvc, auth)
+	transfHand := httptransport.NewTranserHandler(transferSvc, auth)
+	userHand := httptransport.NewUserHandler(usrSvc, auth)
 
 	//router & routes setup
 	router := httptransport.NewRouter(accountHand, transfHand, userHand)

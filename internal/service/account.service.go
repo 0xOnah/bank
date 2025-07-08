@@ -42,7 +42,7 @@ func (a *AccountService) CreateAccount(ctx context.Context, arg entity.CreateAcc
 	return account, nil
 }
 
-func (a *AccountService) GetAccountByID(ctx context.Context, id int64) (*entity.Account, error) {
+func (a *AccountService) GetAccountByID(ctx context.Context, username string, id int64) (*entity.Account, error) {
 	account, err := a.accountRepo.GetAccountByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, repo.ErrRecordNotFound) {
@@ -50,10 +50,21 @@ func (a *AccountService) GetAccountByID(ctx context.Context, id int64) (*entity.
 		}
 		return nil, NewAppError(ErrUnknown, "failed to retrieve account due to an unexpected issue", err) // `err` here is the original repo error
 	}
+	if account.Owner != username {
+		return nil, NewAppError(ErrUnauthorized, "cannot not retrieve data for this account", nil)
+	}
 	return account, nil
 }
 
 func (a *AccountService) ListAccount(ctx context.Context, arg entity.ListAccountInput) ([]*entity.Account, error) {
+	accounts, err := a.accountRepo.ListAccount(ctx, arg)
+	if err != nil {
+		return nil, err
+	}
+	return accounts, nil
+}
+
+func (a *AccountService) LoginAccount(ctx context.Context, arg entity.ListAccountInput) ([]*entity.Account, error) {
 	accounts, err := a.accountRepo.ListAccount(ctx, arg)
 	if err != nil {
 		return nil, err

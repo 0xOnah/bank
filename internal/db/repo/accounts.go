@@ -80,6 +80,7 @@ func (r *accountRepo) GetAccountForUpdate(ctx context.Context, id int64) (*entit
 
 func (r *accountRepo) ListAccount(ctx context.Context, arg entity.ListAccountInput) ([]*entity.Account, error) {
 	results, err := r.db.ListAccount(ctx, sqlc.ListAccountParams{
+		Owner : arg.User,
 		Limit:  arg.Limit,
 		Offset: arg.Offset,
 	})
