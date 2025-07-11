@@ -2,6 +2,7 @@ package httptransport
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -93,9 +94,14 @@ func (uh *UserHandler) LoginAccount(ctx *gin.Context) {
 	if err != nil {
 		if appErr, ok := err.(*service.AppError); ok {
 			ctx.JSON(mapErrorToStatus(appErr), util.ErrorResponse(err))
+			slog.Info("Handled client error in CreateAccount",
+				slog.Int("statusCode", int(appErr.Code)),
+				slog.String("message", appErr.Message),
+				slog.String("error", appErr.Err.Error()))
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, util.ErrorResponse(err))
+
 		return
 	}
 

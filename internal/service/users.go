@@ -54,7 +54,7 @@ func (us *userService) Login(ctx context.Context, username, password string) (*A
 		if err == repo.ErrUserNotFound {
 			return nil, NewAppError(ErrBadRequest, "user not found", err)
 		}
-		return nil, fmt.Errorf("GetUser failed: %w", err)
+		return nil, NewAppError(ErrInternal, "internal server error:", err)
 	}
 
 	if !auth.ComparePassword([]byte(user.HashedPassword), password) {

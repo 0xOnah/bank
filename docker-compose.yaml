@@ -1,0 +1,27 @@
+services:
+  postgres-bank:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: secret
+      POSTGRES_USER: postgres
+      POSTGRES_DB: bank
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  simplebank:
+    build:
+      context: .
+      dockerfile: Dockerfile 
+    environment:
+      DSN: postgresql://postgres:secret@postgres-bank:5432/bank?sslmode=disable 
+      GIN_MODE: release
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres-bank:
+        condition: service_healthy
