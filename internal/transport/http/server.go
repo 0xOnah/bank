@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -44,6 +45,7 @@ func (r *Router) Serve(port string) error {
 		IdleTimeout:  time.Second * 15,
 	}
 
+	slog.Info("server starting", slog.String("port", ":8080"))
 	shutDown := make(chan error)
 	go func() {
 		err := server.ListenAndServe()
