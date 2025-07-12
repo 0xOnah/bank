@@ -6,6 +6,7 @@ on:
 
 jobs:
   build:
+    name: Build image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -27,6 +28,11 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: bankapp
           IMAGE_TAG: ${{ github.sha }}
+          DSN: ${{ secrets.DSN }}
+          PORT: ${{ secrets.PORT }}
+          TOKEN_SYMMETRIC_KEY: ${{ secrets.TOKEN_SYMMETRIC_KEY }}
+          ACCESS_TOKEN_DURATATION: ${{ secrets.ACCESS_TOKEN_DURATATION }}
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
