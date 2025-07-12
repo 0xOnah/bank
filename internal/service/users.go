@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
-	"log"
+	"strings"
 
+	"github.com/lib/pq"
 	"github.com/onahvictor/bank/internal/config"
 	"github.com/onahvictor/bank/internal/db/repo"
 	"github.com/onahvictor/bank/internal/entity"
@@ -19,25 +20,32 @@ type UserRepository interface {
 type userService struct {
 	userRepo UserRepository
 	token    auth.Auntenticator
-	config   config.Config
+	config   *config.Config
 }
 
 func NewUserService(ur UserRepository, token auth.Auntenticator, config config.Config) *userService {
 	return &userService{
 		userRepo: ur,
 		token:    token,
-		config:   config,
+		config:   &config,
 	}
 }
 
 func (us *userService) CreateUser(ctx context.Context, username, email, password, fullname string) (entity.User, error) {
 	user, err := entity.NewUser(username, password, fullname, email)
 	if err != nil {
-		log.Print(err)
 		return entity.User{}, NewAppError(ErrBadRequest, "failed to create user", err)
 	}
 	createdUser, err := us.userRepo.CreateUser(ctx, user)
 	if err != nil {
+		errvalue, ok := err.(*pq.Error)
+		if ok {
+			switch {
+			case strings.Contains(errvalue.Error(), "duplicate"):
+				return entity.User{}, NewAppError(ErrBadRequest, "this user already exist", err)
+			}
+		}
+
 		return entity.User{}, NewAppError(ErrInternal, "internal server error", err)
 	}
 	return *createdUser, nil

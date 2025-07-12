@@ -66,6 +66,7 @@ func TestCreateUser(t *testing.T) {
 				"password": "secret",
 				"fullname": user.FullName,
 				"email":    user.Email.String(),
+				"currency": randomAccount().Currency,
 			},
 			buildStubs: func(repo *mockdb.MockUserRepository) {
 				repo.EXPECT().CreateUser(gomock.Any(), EqCreateUser(user, "secret")).Times(1).Return(&user, nil)
@@ -118,11 +119,22 @@ func TestCreateUser(t *testing.T) {
 		t.Run(value.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			repo := mockdb.NewMockUserRepository(ctrl)
-			maker, _ := auth.NewJWTMaker("secret")
-			userSvc := service.NewUserService(repo, nil, config.Config{})
-			httpHandler := httptransport.NewUserHandler(userSvc, maker)
-			router := httptransport.NewRouter(nil, nil, httpHandler)
+			maker, err := auth.NewJWTMaker("123456789123456789123456789123456789123456789")
+			require.NoError(t, err)
+
+			accountRepo := mockdb.NewMockAccountRepository(ctrl)
+			transferRepo := mockdb.NewMockTransferRepository(ctrl)
+			userRepo := mockdb.NewMockUserRepository(ctrl)
+			accountSvc := service.NewAccountService(accountRepo)
+			accountHandler := httptransport.NewAccountHandler(accountSvc, maker)
+
+			transferSvc := service.NewTransferService(transferRepo, accountRepo)
+			transfHand := httptransport.NewTranserHandler(transferSvc, maker)
+
+			usrSvc := service.NewUserService(userRepo, maker, config.Config{})
+			userHand := httptransport.NewUserHandler(usrSvc, maker)
+
+			router := httptransport.NewRouter(accountHandler, transfHand, userHand)
 
 			data, err := json.Marshal(value.body)
 			require.NoError(t, err)
@@ -132,7 +144,7 @@ func TestCreateUser(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			require.NoError(t, err)
 
-			value.buildStubs(repo)
+			value.buildStubs(userRepo)
 			rec := httptest.NewRecorder()
 			router.Mux.ServeHTTP(rec, req)
 			value.checkResponse(rec)

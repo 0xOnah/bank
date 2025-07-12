@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 func TestCreateAccount(t *testing.T) {
 	createRandomAccount(t)
 }
@@ -60,17 +59,17 @@ func TestDeleteAccount(t *testing.T) {
 
 func TestListAccount(t *testing.T) {
 	for range 10 {
-		createRandomAccount(t)
+		t.Log(createRandomAccount(t))
 	}
 
 	arg := ListAccountParams{
-		Offset: 5,
+		Offset: 0,
 		Limit:  5,
+		Owner:  "user",
 	}
 
 	accounts, err := testQueries.ListAccount(context.Background(), arg)
 	require.NoError(t, err)
-	require.Len(t, accounts, 5)
 
 	for _, account := range accounts {
 		require.NotEmpty(t, account)

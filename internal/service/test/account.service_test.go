@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/onahvictor/bank/internal/config"
 	mockdb "github.com/onahvictor/bank/internal/db/mock"
 	"github.com/onahvictor/bank/internal/db/repo"
 	"github.com/onahvictor/bank/internal/entity"
@@ -36,8 +37,10 @@ func requireBodyMatch(t *testing.T, body *bytes.Buffer, account *entity.Account)
 
 	var got entity.Account
 	err := json.Unmarshal(body.Bytes(), &got)
+	t.Log(got)
 	require.NoError(t, err)
 	require.Equal(t, account.ID, got.ID)
+	require.Equal(t, account.Owner, got.Owner)
 	require.Equal(t, account.Balance, got.Balance)
 	require.Equal(t, account.Currency, got.Currency)
 
@@ -46,10 +49,10 @@ func requireBodyMatch(t *testing.T, body *bytes.Buffer, account *entity.Account)
 func TestGetAccountByID(t *testing.T) {
 	token, err := auth.NewJWTMaker("123456789123456789123456789123456789")
 	require.NoError(t, err)
-	payload, err := token.GenerateToken("user", time.Minute*15)
-	require.NoError(t, err)
 	
 	expected := randomAccount()
+	payload, err := token.GenerateToken(expected.Owner, time.Minute*15)
+	require.NoError(t, err)
 
 	type TestCase struct {
 		name          string
@@ -121,16 +124,26 @@ func TestGetAccountByID(t *testing.T) {
 			defer ctrl.Finish()
 
 			accountRepo := mockdb.NewMockAccountRepository(ctrl)
+			transferRepo := mockdb.NewMockTransferRepository(ctrl)
+			userRepo := mockdb.NewMockUserRepository(ctrl)
 			accountSvc := service.NewAccountService(accountRepo)
-			httpHandler := httptransport.NewAccountHandler(accountSvc, nil)
-			router := httptransport.NewRouter(httpHandler, nil, nil)
+			accountHandler := httptransport.NewAccountHandler(accountSvc, token)
+
+			transferSvc := service.NewTransferService(transferRepo, accountRepo)
+			transfHand := httptransport.NewTranserHandler(transferSvc, token)
+
+			usrSvc := service.NewUserService(userRepo, token, config.Config{})
+			userHand := httptransport.NewUserHandler(usrSvc, token)
+
+			router := httptransport.NewRouter(accountHandler, transfHand, userHand)
 
 			value.buildStubs(accountRepo)
 
 			recorder := httptest.NewRecorder()
+			t.Log(value.accountID)
 			url := fmt.Sprintf("/accounts/%d", value.accountID)
 			req, err := http.NewRequest(http.MethodGet, url, nil)
-			req.Header.Set("Authorization", payload)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", payload))
 			require.NoError(t, err)
 
 			router.Mux.ServeHTTP(recorder, req)

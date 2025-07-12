@@ -103,6 +103,7 @@ func (a *AccountHandler) GetAccountByID(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, util.ErrorResponse(err))
 		return
 	}
+
 	ctx.JSON(http.StatusOK, AccountResp{
 		ID:       account.ID,
 		Balance:  account.Balance,
