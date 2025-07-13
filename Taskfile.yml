@@ -61,4 +61,4 @@ tasks:
   mock:
     desc: "generate mock"
     cmds:
-    - mockgen -package mockdb -destination internal/db/mock/{{.filename}}.go github.com/onahvictor/bank/internal/service {{.location}}
+    - mockgen -package mockdb -destination internal/db/mock/{{.filename}}.go github.com/onahvictor/bank/internal/service {{.interface-name}}
