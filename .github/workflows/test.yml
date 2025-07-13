@@ -9,15 +9,13 @@ jobs:
   build:
     name: Test
     runs-on: ubuntu-latest
-    env: 
-      DSN: ${{ secrets.DSN }}
     services:
       postgres:
         image: postgres:15
         env:
           POSTGRES_PASSWORD: secret
           POSTGRES_USER: postgres
-          POSTGRES_DB: bank 
+          POSTGRES_DB: bank
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -45,13 +43,11 @@ jobs:
           sudo mv migrate /usr/local/bin/
           which migrate
 
-      - name: Build   #optional feature for fast feedback loop if any issues was to occur at compile time
+      - name: Build
         run: go build -v ./...
 
       - name: Run migrations
-        env:
-          DSN: ${{ secrets.DSN }}
-        run: task migrations-up -- DSN=$DSN
+        run: task migrations-up DSN=postgresql://postgres:secret@localhost:5432/bank?sslmode=disable"
 
       - name: Test
         run: task test
