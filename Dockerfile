@@ -16,7 +16,7 @@ WORKDIR /app
 COPY --from=builder /app/main .
 COPY --from=builder /app/migrate ./migrate
 COPY internal/db/migrations ./migrations
-# COPY app.env .
+COPY app.env .
 COPY start.sh .
 RUN chmod +x start.sh
 
