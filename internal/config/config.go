@@ -7,9 +7,9 @@ import (
 )
 
 type Config struct {
-	DSN                     string `mapstructure:"DSN"`
-	PORT                    string `mapstructure:"PORT"`
-	TOKEN_SYMMETRIC_KEY     string `mapstructure:"TOKEN_SYMMETRIC_KEY"`
+	DSN                     string        `mapstructure:"DSN"`
+	PORT                    string        `mapstructure:"PORT"`
+	TOKEN_SYMMETRIC_KEY     string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	ACCESS_TOKEN_DURATATION time.Duration `mapstructure:"ACCESS_TOKEN_DURATATION"`
 }
 

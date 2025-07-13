@@ -17,7 +17,7 @@ jobs:
         env:
           POSTGRES_PASSWORD: secret
           POSTGRES_USER: postgres
-          POSTGRES_DB: bank
+          POSTGRES_DB: bank 
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -26,29 +26,32 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.22.x'
+
       - name: Install Task
         run: |
           curl -sL https://taskfile.dev/install.sh | sh
           sudo mv ./bin/task /usr/local/bin/
+
       - name: Install migrate
         run: |
           curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
           sudo mv migrate /usr/local/bin/
           which migrate
-      - name: Build
+
+      - name: Build   #optional feature for fast feedback loop if any issues was to occur at compile time
         run: go build -v ./...
+
       - name: Run migrations
         env:
           DSN: ${{ secrets.DSN }}
         run: task migrations-up -- DSN=$DSN
-      - name: Write app.env for CI
-        run: |
-            echo "DSN=postgresql://postgres:secret@localhost:5432/bank?sslmode=disable" > app.env
-             echo "PORT=0.0.0.0:8080" >> app.env
+
       - name: Test
         run: task test
