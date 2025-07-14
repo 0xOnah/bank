@@ -51,6 +51,8 @@ jobs:
         run: go build -v ./...
 
       - name: Run migrations
+        env
+          DSN: ${{ secrets.DSN }}
         run: task migrations-up -- DSN=$DSN
 
       - name: Test
