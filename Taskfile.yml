@@ -25,7 +25,7 @@ tasks:
   migrations-up:
     desc: "run up migrations"
     cmds:
-    - migrate -database=$DSN  -path=./internal/db/migrations -verbose up
+    - migrate -database {{.DSN}} -path=./internal/db/migrations -verbose up
   migrations-down: 
     desc: "run down migrations"
     cmds:

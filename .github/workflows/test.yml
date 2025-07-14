@@ -5,13 +5,12 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
 jobs:
   build:
     name: Test
     runs-on: ubuntu-latest
-    env:
-      DSN: ${{ secrets.DSN }} 
+    env: 
+      DSN: ${{ secrets.DSN }}
     services:
       postgres:
         image: postgres:15
@@ -26,7 +25,6 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -54,6 +52,8 @@ jobs:
         env:
           DSN: ${{ secrets.DSN }}
         run: task migrations-up -- DSN=$DSN
-
+        
       - name: Test
+        env:
+          DSN: ${{secrets.DSN }}
         run: task test
