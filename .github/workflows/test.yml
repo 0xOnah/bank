@@ -56,7 +56,6 @@ jobs:
       - name: Write app.env for CI
         run: |
             echo "DSN=postgresql://postgres:secret@localhost:5432/bank?sslmode=disable" > app.env
-             echo "PORT=0.0.0.0:8080" >> app.env
 
       - name: Test
         run: task test
