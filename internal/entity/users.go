@@ -11,10 +11,10 @@ import (
 var EmailExP = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 type User struct {
-	Username string
+	Username       string
 	HashedPassword string
-	FullName string
-	Email    Email
+	FullName       string
+	Email          Email
 }
 
 type Email struct {
@@ -56,10 +56,10 @@ func NewUser(username, password, fullname, emailStr string) (User, error) {
 	}
 
 	user := User{
-		Username: username,
+		Username:       username,
 		HashedPassword: hash,
-		FullName: fullname,
-		Email:    email,
+		FullName:       fullname,
+		Email:          email,
 	}
 
 	return user, nil

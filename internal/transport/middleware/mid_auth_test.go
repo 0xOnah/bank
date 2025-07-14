@@ -23,35 +23,35 @@ func TestAuth(t *testing.T) {
 			setupAuth: func(r *http.Request, tokenMaker auth.Auntenticator) {
 				token, err := tokenMaker.GenerateToken("user", time.Minute*15)
 				require.NoError(t, err)
-				r.Header.Set("Authorization", fmt.Sprintf("%s %s",authorizationTypeBearer, token))
+				r.Header.Set("Authorization", fmt.Sprintf("%s %s", authorizationTypeBearer, token))
 			},
 			checkResponse: func(record *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, record.Code)
 			},
-		},{
+		}, {
 			name: "No Authorization",
 			setupAuth: func(r *http.Request, tokenMaker auth.Auntenticator) {
-	
+
 			},
 			checkResponse: func(record *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusUnauthorized, record.Code)
 			},
-		},{
+		}, {
 			name: "Expired token",
 			setupAuth: func(r *http.Request, tokenMaker auth.Auntenticator) {
 				token, err := tokenMaker.GenerateToken("user", -time.Minute*15)
 				require.NoError(t, err)
-				r.Header.Set("Authorization", fmt.Sprintf("%s %s",authorizationTypeBearer, token))
+				r.Header.Set("Authorization", fmt.Sprintf("%s %s", authorizationTypeBearer, token))
 			},
 			checkResponse: func(record *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusUnauthorized, record.Code)
 			},
-		},{
+		}, {
 			name: "Invalid AuthorizationFormat",
 			setupAuth: func(r *http.Request, tokenMaker auth.Auntenticator) {
 				token, err := tokenMaker.GenerateToken("user", time.Minute*15)
 				require.NoError(t, err)
-				r.Header.Set("", fmt.Sprintf("%s %s",authorizationTypeBearer, token))
+				r.Header.Set("", fmt.Sprintf("%s %s", authorizationTypeBearer, token))
 			},
 			checkResponse: func(record *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusUnauthorized, record.Code)
@@ -72,7 +72,7 @@ func TestAuth(t *testing.T) {
 			rec := httptest.NewRecorder()
 			req, err := http.NewRequest(http.MethodGet, "/auth", nil)
 			require.NoError(t, err)
-			
+
 			tc.setupAuth(req, maker)
 			router.ServeHTTP(rec, req)
 			tc.checkResponse(rec)

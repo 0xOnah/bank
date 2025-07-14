@@ -6,10 +6,10 @@ import (
 	"fmt"
 )
 
-// type Store interface {
-// 	*Queries
-// 	TransferTx(ctx context.Context, arg TransferTxParams) (*TransferTxResult, error)
-// }
+//	type Store interface {
+//		*Queries
+//		TransferTx(ctx context.Context, arg TransferTxParams) (*TransferTxResult, error)
+//	}
 type SQLStore struct {
 	*Queries
 	db *sql.DB

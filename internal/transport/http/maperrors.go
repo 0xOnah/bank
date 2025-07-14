@@ -15,7 +15,7 @@ func mapErrorToStatus(err *service.AppError) int {
 	case service.ErrConflict:
 		return http.StatusConflict
 	case service.ErrBadRequest:
-		return  http.StatusBadRequest
+		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError
 	}

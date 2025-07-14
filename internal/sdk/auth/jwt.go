@@ -31,7 +31,7 @@ func (jt *JWTMaker) GenerateToken(username string, duration time.Duration) (stri
 	payload, err := NewPayload(username, duration)
 	if err != nil {
 		return "", ErrTokenGen
-	} 
+	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
 	tokenString, err := token.SignedString([]byte(jt.secretKey))
