@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
 jobs:
-  Test:
+  build:
     name: Test
     runs-on: ubuntu-latest
     env: 
@@ -26,7 +26,7 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - name: Checkout code
+      - name: checkout code 
         uses: actions/checkout@v4
 
       - name: Set up Go
@@ -44,16 +44,18 @@ jobs:
           curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
           sudo mv migrate /usr/local/bin/
           which migrate
-
+      
       - name: Build
         run: go build -v ./...
-
+      
       - name: Run migrations
         env:
           DSN: postgresql://postgres:secret@localhost:5432/bank?sslmode=disable
         run: task migrations-up
-        
+      
+      - name: Write app.env for CI
+        run: |
+            echo "DSN=postgresql://postgres:secret@localhost:5432/bank?sslmode=disable" > app.env
+
       - name: Test
-        env:
-          DSN: postgresql://postgres:secret@postgres:5432/bank?sslmode=disable
         run: task test
