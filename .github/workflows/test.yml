@@ -50,10 +50,10 @@ jobs:
 
       - name: Run migrations
         env:
-          DSN: ${{ secrets.DSN }}
+          DSN: postgresql://postgres:secret@localhost:5432/bank?sslmode=disable
         run: task migrations-up
         
       - name: Test
         env:
-          DSN: ${{secrets.DSN }}
+          DSN: postgresql://postgres:secret@postgres:5432/bank?sslmode=disable
         run: task test
