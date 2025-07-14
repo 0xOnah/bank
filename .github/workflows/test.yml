@@ -56,4 +56,4 @@ jobs:
         run: echo "DSN=postgresql://postgres:secret@localhost:5432/bank?sslmode=disable" > app.env
 
       - name: Test
-        run: make test
+        run: make test 
