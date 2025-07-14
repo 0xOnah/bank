@@ -47,7 +47,9 @@ jobs:
         run: go build -v ./...
 
       - name: Run migrations
-        run: task migrations-up DSN=postgresql://postgres:secret@localhost:5432/bank?sslmode=disable
+        env:
+         DSN: postgresql://postgres:secret@localhost:5432/bank?sslmode=disable
+        run: task migrations-up
 
       - name: Test
         run: task test

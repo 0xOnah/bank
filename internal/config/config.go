@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/spf13/viper"
@@ -19,9 +20,8 @@ func LoadConfig(path string) (config Config, err error) {
 	viper.SetConfigType("env")
 	viper.AutomaticEnv()
 
-	err = viper.ReadInConfig()
-	if err != nil {
-		return
+	if err = viper.ReadInConfig(); err != nil {
+		slog.Error("No config file found. Falling back to environment variables.")
 	}
 
 	err = viper.Unmarshal(&config)
