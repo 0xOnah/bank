@@ -5,26 +5,31 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+
 jobs:
   build:
     name: Test
     runs-on: ubuntu-latest
-    env: 
-      DSN: ${{ secrets.DSN }}
+
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_PASSWORD: secret
           POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: secret
           POSTGRES_DB: bank
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          - 5432:5432
+
+    env:
+      # Use the service container hostname 'postgres'
+      DSN: postgresql://postgres:secret@postgres:5432/bank?sslmode=disable
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,11 +54,7 @@ jobs:
         run: go build -v ./...
 
       - name: Run migrations
-        env:
-          DSN: postgresql://postgres:secret@localhost:5432/bank?sslmode=disable
         run: task migrations-up
-        
-      - name: Test
-        env:
-          DSN: postgresql://postgres:secret@postgres:5432/bank?sslmode=disable
+
+      - name: Run tests
         run: task test
