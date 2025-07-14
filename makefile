@@ -1,5 +1,5 @@
 ## Include environment variables
-include app.env
+-include app.env
 
 ## help: Show this help message
 .PHONY: help
