@@ -53,7 +53,7 @@ jobs:
       - name: Run migrations
         env:
           DSN: ${{ secrets.DSN }}
-        run: task migrations-up -- DSN=$DSN
+        run: task migrations-up
 
       - name: Test
         run: task test
