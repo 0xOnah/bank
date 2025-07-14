@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
 jobs:
-  build:
+    Test:
     name: Test
     runs-on: ubuntu-latest
     env: 
