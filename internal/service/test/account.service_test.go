@@ -49,7 +49,7 @@ func requireBodyMatch(t *testing.T, body *bytes.Buffer, account *entity.Account)
 func TestGetAccountByID(t *testing.T) {
 	token, err := auth.NewJWTMaker("123456789123456789123456789123456789")
 	require.NoError(t, err)
-	
+
 	expected := randomAccount()
 	payload, err := token.GenerateToken(expected.Owner, time.Minute*15)
 	require.NoError(t, err)
