@@ -24,7 +24,9 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Load secrets and save to app.env
-        run : aws secretsmanager get-secret-value --secret-id bankapp-prod --query SecretString --output text | jq 'to_entries|map("\(.key)=\(.value)")'.[] -r > app.env
+        run: |
+            aws secretsmanager get-secret-value --region eu-north-1 --secret-id bankapp-prod --query SecretString --output text | jq 'to_entries|map("\(.key)=\(.value)")'.[] -r > app.env
+            cat app.env  # Print the contents for debugging
 
       - name: Build and push Docker image to ECR
         env:
