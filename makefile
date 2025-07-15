@@ -1,19 +1,11 @@
-## Include environment variables
 -include app.env
 
-## help: Show this help message
 .PHONY: help
 help:
 	@echo ''
 	@echo 'Usage:'
 	@sed -n 's/^##//p' $(MAKEFILE_LIST) | column -t -s ':' | sed -e 's/^/ /'
 	@echo ''
-
-## confirm: Ask before continuing
-.PHONY: confirm
-confirm:
-	@echo -n 'Are you sure? [y/N] ' && read ans && [ "$$ans" = y ]
-
 
 ## run/server: Start the Go server
 .PHONY: run/server
