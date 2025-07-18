@@ -125,13 +125,14 @@ func TestCreateUser(t *testing.T) {
 			accountRepo := mockdb.NewMockAccountRepository(ctrl)
 			transferRepo := mockdb.NewMockTransferRepository(ctrl)
 			userRepo := mockdb.NewMockUserRepository(ctrl)
+			sessionRepo := mockdb.NewMockSessionRepository(ctrl)
 			accountSvc := service.NewAccountService(accountRepo)
 			accountHandler := httptransport.NewAccountHandler(accountSvc, maker)
 
 			transferSvc := service.NewTransferService(transferRepo, accountRepo)
 			transfHand := httptransport.NewTranserHandler(transferSvc, maker)
 
-			usrSvc := service.NewUserService(userRepo, maker, config.Config{})
+			usrSvc := service.NewUserService(userRepo, maker, config.Config{}, sessionRepo)
 			userHand := httptransport.NewUserHandler(usrSvc, maker)
 
 			router := httptransport.NewRouter(accountHandler, transfHand, userHand)
@@ -150,4 +151,8 @@ func TestCreateUser(t *testing.T) {
 			value.checkResponse(rec)
 		})
 	}
+}
+
+func TestLogin(t *testing.T) {
+
 }

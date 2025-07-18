@@ -2,10 +2,13 @@ package httptransport
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/onahvictor/bank/internal/entity"
 	"github.com/onahvictor/bank/internal/sdk/auth"
 	"github.com/onahvictor/bank/internal/service"
@@ -14,7 +17,8 @@ import (
 
 type userService interface {
 	CreateUser(ctx context.Context, username, email, password, fullname string) (entity.User, error)
-	Login(ctx context.Context, username, password string) (*service.AuthResult, error)
+	Login(ctx context.Context, username, password string, r *http.Request) (*service.AuthResult, error)
+	RenewAccessToken(ctx context.Context, refreshToken string) (service.RenewAccessToken, error)
 }
 
 type UserHandler struct {
@@ -48,6 +52,7 @@ func NewUserHandler(us userService, auth auth.Auntenticator) *UserHandler {
 func (t *UserHandler) MapAccountRoutes(r *gin.Engine) {
 	r.POST("/user", t.CreateUser)
 	r.POST("/login", t.LoginAccount)
+	r.POST("/token/renew_access", t.RenewAccessToken)
 }
 
 func (uh *UserHandler) CreateUser(ctx *gin.Context) {
@@ -78,8 +83,12 @@ type userLoginReq struct {
 }
 
 type userLoginResp struct {
-	AccessToken string   `json:"access_token"`
-	User        userResp `json:"user"`
+	AccessToken           string    `json:"access_token"`
+	AccessTokenExpiresAt  time.Time `json:"access_token_expires_at"`
+	RefreshToken          string    `json:"refresh_token"`
+	RefreshTokenExpiresAt time.Time `json:"refresh_token_expires_at"`
+	SessionID             uuid.UUID `json:"session_id"`
+	User                  userResp  `json:"user"`
 }
 
 func (uh *UserHandler) LoginAccount(ctx *gin.Context) {
@@ -90,7 +99,7 @@ func (uh *UserHandler) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	data, err := uh.UsrSvc.Login(ctx.Request.Context(), loginUser.Username, loginUser.Password)
+	data, err := uh.UsrSvc.Login(ctx.Request.Context(), loginUser.Username, loginUser.Password, ctx.Request)
 	if err != nil {
 		if appErr, ok := err.(*service.AppError); ok {
 			ctx.JSON(mapErrorToStatus(appErr), util.ErrorResponse(err))
@@ -100,13 +109,18 @@ func (uh *UserHandler) LoginAccount(ctx *gin.Context) {
 				slog.String("error", appErr.Err.Error()))
 			return
 		}
+		fmt.Println(err)
 		ctx.JSON(http.StatusInternalServerError, util.ErrorResponse(err))
 
 		return
 	}
 
 	result := userLoginResp{
-		AccessToken: data.Token,
+		AccessToken:           data.AccessToken,
+		AccessTokenExpiresAt:  data.AccessTokenExpiresAt,
+		RefreshToken:          data.RefreshToken,
+		RefreshTokenExpiresAt: data.RefreshTokenExpiresAt,
+		SessionID:             data.SessionID,
 		User: userResp{
 			Username: data.User.Username,
 			Email:    data.User.Email.String(),
@@ -114,4 +128,44 @@ func (uh *UserHandler) LoginAccount(ctx *gin.Context) {
 		},
 	}
 	ctx.JSON(http.StatusOK, result)
+}
+
+type renew struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type RenewAccessTokenResp struct {
+	AccessToken          string    `json:"access_token"`
+	AccessTokenExpiresAt time.Time `json:"access_token_expires_at"`
+}
+
+func (uh *UserHandler) RenewAccessToken(ctx *gin.Context) {
+	var refreshToken renew
+	err := ctx.ShouldBindJSON(&refreshToken)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
+		return
+	}
+	ctx.ClientIP()
+	accessToken, err := uh.UsrSvc.RenewAccessToken(ctx.Request.Context(), refreshToken.RefreshToken)
+	if err != nil {
+		if appErr, ok := err.(*service.AppError); ok {
+			ctx.JSON(mapErrorToStatus(appErr), util.ErrorResponse(err))
+			slog.Info("Handled client error in CreateAccount",
+				slog.Int("statusCode", int(appErr.Code)),
+				slog.String("message", appErr.Message),
+				slog.String("error", appErr.Err.Error()))
+			return
+		}
+		fmt.Println(err)
+		ctx.JSON(http.StatusInternalServerError, util.ErrorResponse(err))
+
+		return
+	}
+
+	access := RenewAccessTokenResp{
+		AccessToken:          accessToken.AccessToken,
+		AccessTokenExpiresAt: accessToken.AccessTokenExpiresAt,
+	}
+	ctx.JSON(http.StatusOK, access)
 }
