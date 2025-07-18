@@ -21,7 +21,7 @@ func TestAuth(t *testing.T) {
 		{
 			name: "OK Valid token",
 			setupAuth: func(r *http.Request, tokenMaker auth.Auntenticator) {
-				token, err := tokenMaker.GenerateToken("user", time.Minute*15)
+				token, _, err := tokenMaker.GenerateToken("user", time.Minute*15)
 				require.NoError(t, err)
 				r.Header.Set("Authorization", fmt.Sprintf("%s %s", authorizationTypeBearer, token))
 			},
@@ -39,7 +39,7 @@ func TestAuth(t *testing.T) {
 		}, {
 			name: "Expired token",
 			setupAuth: func(r *http.Request, tokenMaker auth.Auntenticator) {
-				token, err := tokenMaker.GenerateToken("user", -time.Minute*15)
+				token, _, err := tokenMaker.GenerateToken("user", -time.Minute*15)
 				require.NoError(t, err)
 				r.Header.Set("Authorization", fmt.Sprintf("%s %s", authorizationTypeBearer, token))
 			},
@@ -49,7 +49,7 @@ func TestAuth(t *testing.T) {
 		}, {
 			name: "Invalid AuthorizationFormat",
 			setupAuth: func(r *http.Request, tokenMaker auth.Auntenticator) {
-				token, err := tokenMaker.GenerateToken("user", time.Minute*15)
+				token, _, err := tokenMaker.GenerateToken("user", time.Minute*15)
 				require.NoError(t, err)
 				r.Header.Set("", fmt.Sprintf("%s %s", authorizationTypeBearer, token))
 			},

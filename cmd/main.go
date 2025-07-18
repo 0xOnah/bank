@@ -32,11 +32,12 @@ func Run() {
 	accountRepo := repo.NewAccountRepo(store)
 	transfRepo := repo.NewTransferRepo(store)
 	userRepo := repo.NewUserRepo(store)
+	sessionRepo := repo.NewSessionRepo(store)
 
 	//services setup
 	accountSvc := service.NewAccountService(accountRepo)
 	transferSvc := service.NewTransferService(transfRepo, accountRepo)
-	usrSvc := service.NewUserService(userRepo, auth, config)
+	usrSvc := service.NewUserService(userRepo, auth, config, sessionRepo)
 	//handlers
 
 	accountHand := httptransport.NewAccountHandler(accountSvc, auth)

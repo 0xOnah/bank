@@ -51,7 +51,7 @@ func TestGetAccountByID(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := randomAccount()
-	payload, err := token.GenerateToken(expected.Owner, time.Minute*15)
+	payload, _, err := token.GenerateToken(expected.Owner, time.Minute*15)
 	require.NoError(t, err)
 
 	type TestCase struct {
@@ -126,13 +126,14 @@ func TestGetAccountByID(t *testing.T) {
 			accountRepo := mockdb.NewMockAccountRepository(ctrl)
 			transferRepo := mockdb.NewMockTransferRepository(ctrl)
 			userRepo := mockdb.NewMockUserRepository(ctrl)
+			sessionRepo := mockdb.NewMockSessionRepository(ctrl)
 			accountSvc := service.NewAccountService(accountRepo)
 			accountHandler := httptransport.NewAccountHandler(accountSvc, token)
 
 			transferSvc := service.NewTransferService(transferRepo, accountRepo)
 			transfHand := httptransport.NewTranserHandler(transferSvc, token)
 
-			usrSvc := service.NewUserService(userRepo, token, config.Config{})
+			usrSvc := service.NewUserService(userRepo, token, config.Config{},sessionRepo)
 			userHand := httptransport.NewUserHandler(usrSvc, token)
 
 			router := httptransport.NewRouter(accountHandler, transfHand, userHand)

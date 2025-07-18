@@ -7,9 +7,9 @@ help:
 	@sed -n 's/^##//p' $(MAKEFILE_LIST) | column -t -s ':' | sed -e 's/^/ /'
 	@echo ''
 
-## run/server: Start the Go server
-.PHONY: run/server
-run/server:
+## run: Start the Go server
+.PHONY: run
+run:
 	go run cmd/main.go
 
 ## run/docker: Start Docker Compose
@@ -29,37 +29,32 @@ e2e:
 	docker compose up -d --build
 	go test -tags=e2e -count=1 -v ./...
 
-## db/migrations name=<name>: Create a new migration
-.PHONY: db/migrations
-db/migrations:
-	migrate create -ext=sql -dir=./db/migrations -seq $(name)
+## migrations name=<name>: Create a new migration
+.PHONY: migrations
+migrations:
+	migrate create -ext=sql -dir=./internal/db/migrations -seq $(name)
 
-## db/migrations/up: Apply up migrations
-.PHONY: db/migrations/up
-db/migrations/up:
+## migrations-up: Apply up migrations
+.PHONY: migrations-up
+migrations-up:
 	migrate -database=$(DSN) -path=./internal/db/migrations -verbose up
 
-## db/migrations/down: Apply down migrations
-.PHONY: db/migrations/down
-db/migrations/down:
+## migrations-down: Apply down migrations
+.PHONY: migrations-down
+migrations-down:
 	migrate -database=$(DSN) -path=./internal/db/migrations -verbose down
 
-## db/migrations/force version=<version>: Force migrations to a version
-.PHONY: db/migrations/force
-db/migrations/force:
+## migrations-force version=<version>: Force migrations to a version
+.PHONY: migrations-force
+migrations-force:
 	@echo "Forcing migration version $(version)"
-	migrate -database=$(DSN) -path=./db/migrations force $(version)
+	migrate -database=$(DSN) -path=./internal/db/migrations force $(version)
 
 
 ## test: Run all unit tests
 .PHONY: test
 test:
 	go test -v -cover -count=1 ./...
-
-## lint: Run golangci-lint
-.PHONY: lint
-lint:
-	golangci-lint run
 
 ## audit: Format, vet, test
 .PHONY: audit

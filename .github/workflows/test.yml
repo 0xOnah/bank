@@ -49,7 +49,7 @@ jobs:
       - name: Run migrations
         env:
           DSN: postgresql://postgres:secret@localhost:5432/bank?sslmode=disable
-        run: make db/migrations/up
+        run: make migrations-up
 
       - name: Write app.env for CI
         run: echo "DSN=postgresql://postgres:secret@localhost:5432/bank?sslmode=disable" > app.env
