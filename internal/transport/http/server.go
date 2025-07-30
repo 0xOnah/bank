@@ -42,7 +42,7 @@ func (r *Router) Serve(port string) error {
 		Handler:      r.Mux,
 		ReadTimeout:  time.Second * 5,
 		WriteTimeout: time.Second * 10,
-		IdleTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 30,
 	}
 
 	slog.Info("server starting", slog.String("port", ":8080"))

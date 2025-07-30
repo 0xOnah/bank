@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/0xOnah/bank/internal/db/sqlc"
+	"github.com/0xOnah/bank/internal/entity"
 	"github.com/google/uuid"
-	"github.com/onahvictor/bank/internal/db/sqlc"
-	"github.com/onahvictor/bank/internal/entity"
 )
 
 var (

@@ -3,7 +3,7 @@ package httptransport
 import (
 	"time"
 
-	"github.com/onahvictor/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/entity"
 )
 
 type AccountResp struct {

@@ -7,23 +7,25 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/0xOnah/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/sdk/netutil"
+	"github.com/0xOnah/bank/internal/service"
+	"github.com/0xOnah/bank/internal/transport/sdk/errorutil"
+	"github.com/0xOnah/bank/internal/util"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/onahvictor/bank/internal/entity"
-	"github.com/onahvictor/bank/internal/sdk/auth"
-	"github.com/onahvictor/bank/internal/service"
-	"github.com/onahvictor/bank/internal/util"
 )
 
 type userService interface {
-	CreateUser(ctx context.Context, username, email, password, fullname string) (entity.User, error)
-	Login(ctx context.Context, username, password string, r *http.Request) (*service.AuthResult, error)
+	CreateUser(ctx context.Context, cr service.CreateUserInput) (entity.User, error)
+	Login(ctx context.Context, lg service.Logininput) (*service.AuthResult, error)
 	RenewAccessToken(ctx context.Context, refreshToken string) (service.RenewAccessToken, error)
 }
 
 type UserHandler struct {
 	UsrSvc userService
-	auth   auth.Auntenticator
+	auth   auth.Authenticator
 }
 
 type userReq struct {
@@ -46,7 +48,7 @@ func (ur userReq) ToUserResponse(u entity.User) userResp {
 		FullName: u.FullName,
 	}
 }
-func NewUserHandler(us userService, auth auth.Auntenticator) *UserHandler {
+func NewUserHandler(us userService, auth auth.Authenticator) *UserHandler {
 	return &UserHandler{UsrSvc: us, auth: auth}
 }
 func (t *UserHandler) MapAccountRoutes(r *gin.Engine) {
@@ -63,10 +65,16 @@ func (uh *UserHandler) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	userValue, err := uh.UsrSvc.CreateUser(ctx.Request.Context(), createUser.Username, createUser.Email, createUser.Password, createUser.FullName)
+	usArg := service.CreateUserInput{
+		Username: createUser.Username,
+		Password: createUser.Password,
+		Fullname: createUser.FullName,
+		Email:    createUser.Email,
+	}
+	userValue, err := uh.UsrSvc.CreateUser(ctx.Request.Context(), usArg)
 	if err != nil {
-		if appErr, ok := err.(*service.AppError); ok {
-			ctx.JSON(mapErrorToStatus(appErr), util.ErrorResponse(err))
+		if appErr, ok := err.(*errorutil.AppError); ok {
+			ctx.JSON(errorutil.MapErrorToHttpStatus(appErr), util.ErrorResponse(err))
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, util.ErrorResponse(err))
@@ -99,10 +107,16 @@ func (uh *UserHandler) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	data, err := uh.UsrSvc.Login(ctx.Request.Context(), loginUser.Username, loginUser.Password, ctx.Request)
+	login := service.Logininput{
+		Username:  loginUser.Username,
+		Password:  loginUser.Password,
+		ClientIP:  netutil.GetClientIP(ctx.Request),
+		UserAgent: ctx.Request.UserAgent(),
+	}
+	data, err := uh.UsrSvc.Login(ctx.Request.Context(), login)
 	if err != nil {
-		if appErr, ok := err.(*service.AppError); ok {
-			ctx.JSON(mapErrorToStatus(appErr), util.ErrorResponse(err))
+		if appErr, ok := err.(*errorutil.AppError); ok {
+			ctx.JSON(errorutil.MapErrorToHttpStatus(appErr), util.ErrorResponse(err))
 			slog.Info("Handled client error in CreateAccount",
 				slog.Int("statusCode", int(appErr.Code)),
 				slog.String("message", appErr.Message),
@@ -149,8 +163,8 @@ func (uh *UserHandler) RenewAccessToken(ctx *gin.Context) {
 	ctx.ClientIP()
 	accessToken, err := uh.UsrSvc.RenewAccessToken(ctx.Request.Context(), refreshToken.RefreshToken)
 	if err != nil {
-		if appErr, ok := err.(*service.AppError); ok {
-			ctx.JSON(mapErrorToStatus(appErr), util.ErrorResponse(err))
+		if appErr, ok := err.(*errorutil.AppError); ok {
+			ctx.JSON(errorutil.MapErrorToHttpStatus(appErr), util.ErrorResponse(err))
 			slog.Info("Handled client error in CreateAccount",
 				slog.Int("statusCode", int(appErr.Code)),
 				slog.String("message", appErr.Message),

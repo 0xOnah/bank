@@ -3,18 +3,16 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
+	"github.com/0xOnah/bank/internal/config"
+	"github.com/0xOnah/bank/internal/db/repo"
+	"github.com/0xOnah/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/transport/sdk/errorutil"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"github.com/onahvictor/bank/internal/config"
-	"github.com/onahvictor/bank/internal/db/repo"
-	"github.com/onahvictor/bank/internal/entity"
-	"github.com/onahvictor/bank/internal/sdk/auth"
-	"github.com/onahvictor/bank/internal/sdk/netutil"
 )
 
 type UserRepository interface {
@@ -28,12 +26,12 @@ type SessionRepository interface {
 
 type userService struct {
 	userRepo    UserRepository
-	token       auth.Auntenticator
+	token       auth.Authenticator
 	config      *config.Config
 	SessionRepo SessionRepository
 }
 
-func NewUserService(ur UserRepository, token auth.Auntenticator, config config.Config, sr SessionRepository) *userService {
+func NewUserService(ur UserRepository, token auth.Authenticator, config config.Config, sr SessionRepository) *userService {
 	return &userService{
 		userRepo:    ur,
 		token:       token,
@@ -42,22 +40,29 @@ func NewUserService(ur UserRepository, token auth.Auntenticator, config config.C
 	}
 }
 
-func (us *userService) CreateUser(ctx context.Context, username, email, password, fullname string) (entity.User, error) {
-	user, err := entity.NewUser(username, password, fullname, email)
+type CreateUserInput struct {
+	Username string
+	Password string
+	Fullname string
+	Email    string
+}
+
+func (us *userService) CreateUser(ctx context.Context, cr CreateUserInput) (entity.User, error) {
+	user, err := entity.NewUser(cr.Username, cr.Password, cr.Fullname, cr.Email)
 	if err != nil {
-		return entity.User{}, NewAppError(ErrBadRequest, "failed to create user", err)
+		return entity.User{}, errorutil.NewAppError(errorutil.ErrBadRequest, "failed to create user", err)
 	}
+
 	createdUser, err := us.userRepo.CreateUser(ctx, user)
 	if err != nil {
 		errvalue, ok := err.(*pq.Error)
 		if ok {
 			switch {
 			case strings.Contains(errvalue.Error(), "duplicate"):
-				return entity.User{}, NewAppError(ErrBadRequest, "this user already exist", err)
+				return entity.User{}, errorutil.NewAppError(errorutil.ErrBadRequest, "this user already exist", err)
 			}
 		}
-
-		return entity.User{}, NewAppError(ErrInternal, "internal server error", err)
+		return entity.User{}, errorutil.NewAppError(errorutil.ErrInternal, "internal server error", err)
 	}
 	return *createdUser, nil
 }
@@ -71,43 +76,47 @@ type AuthResult struct {
 	User                  *entity.User
 }
 
-func (us *userService) Login(ctx context.Context, username, password string, r *http.Request) (*AuthResult, error) {
-	user, err := us.userRepo.GetUser(ctx, username)
-	fmt.Println(user)
+type Logininput struct {
+	Username  string
+	Password  string
+	ClientIP  string
+	UserAgent string
+}
 
+func (us *userService) Login(ctx context.Context, arg Logininput) (*AuthResult, error) {
+	user, err := us.userRepo.GetUser(ctx, arg.Username)
 	if err != nil {
 		if err == repo.ErrUserNotFound {
-			return nil, NewAppError(ErrBadRequest, "user not found", err)
+			return nil, errorutil.NewAppError(errorutil.ErrBadRequest, "user not found", err)
 		}
-		return nil, NewAppError(ErrInternal, "internal server error:", err)
+		return nil, errorutil.NewAppError(errorutil.ErrInternal, "internal server error:", err)
 	}
 
-	if !auth.ComparePassword([]byte(user.HashedPassword), password) {
-		return nil, repo.ErrInvalidCredentials
+	if !auth.ComparePassword([]byte(user.HashedPassword), arg.Password) {
+		return nil, errorutil.NewAppError(errorutil.ErrUnauthorized, "wrong password", nil)
 	}
 
 	accessToken, accessPayload, err := us.token.GenerateToken(user.Username, us.config.ACCESS_TOKEN_DURATATION)
 	if err != nil {
-		return nil, NewAppError(ErrInternal, "token generation failed: %w", err)
+		return nil, errorutil.NewAppError(errorutil.ErrInternal, "token generation failed: %w", err)
 	}
 
 	refreshToken, refreshpayload, err := us.token.GenerateToken(user.Username, us.config.REFRESH_TOKEN_DURATION)
 	if err != nil {
-		return nil, NewAppError(ErrInternal, "token generation failed: %w", err)
+		return nil, errorutil.NewAppError(errorutil.ErrInternal, "token generation failed: %w", err)
 	}
 
-	clientIP := netutil.GetClientIP(r)
 	session, err := us.SessionRepo.CreateSession(ctx, entity.Session{
 		ID:           uuid.MustParse(refreshpayload.ID),
 		Username:     user.Username,
 		RefreshToken: refreshToken,
-		ClientIp:     clientIP,
-		UserAgent:    r.UserAgent(),
+		ClientIp:     arg.ClientIP,
+		UserAgent:    arg.UserAgent,
 		IsBlocked:    false,
 		ExpiresAt:    refreshpayload.ExpiresAt.Time,
 	})
 	if err != nil {
-		return nil, NewAppError(ErrInternal, "failed to create session", err)
+		return nil, errorutil.NewAppError(errorutil.ErrInternal, "failed to create session", err)
 	}
 
 	return &AuthResult{
@@ -129,36 +138,36 @@ type RenewAccessToken struct {
 func (us *userService) RenewAccessToken(ctx context.Context, refreshToken string) (RenewAccessToken, error) {
 	refreshPayload, err := us.token.VerifyToken(refreshToken)
 	if err != nil {
-		return RenewAccessToken{}, NewAppError(ErrUnauthorized, "session has expired", err)
+		return RenewAccessToken{}, errorutil.NewAppError(errorutil.ErrUnauthorized, "session has expired", err)
 	}
 
 	session, err := us.SessionRepo.GetSession(ctx, uuid.MustParse(refreshPayload.ID))
 	if err != nil {
 		switch {
 		case errors.Is(err, repo.ErrSessionNotFound):
-			return RenewAccessToken{}, NewAppError(ErrNotFound, "session not found", err)
+			return RenewAccessToken{}, errorutil.NewAppError(errorutil.ErrNotFound, "session not found", err)
 		}
-		return RenewAccessToken{}, NewAppError(ErrInternal, "internal server error", err)
+		return RenewAccessToken{}, errorutil.NewAppError(errorutil.ErrInternal, "internal server error", err)
 	}
 
 	if session.IsBlocked {
-		return RenewAccessToken{}, NewAppError(ErrUnauthorized, "session is blocked", err)
+		return RenewAccessToken{}, errorutil.NewAppError(errorutil.ErrUnauthorized, "session is blocked", err)
 	}
 	if session.Username != refreshPayload.Username {
-		return RenewAccessToken{}, NewAppError(ErrUnauthorized, "incorrect session user", err)
+		return RenewAccessToken{}, errorutil.NewAppError(errorutil.ErrUnauthorized, "incorrect session user", err)
 	}
 
 	if session.RefreshToken != refreshToken {
-		return RenewAccessToken{}, NewAppError(ErrUnauthorized, "mismatched session token", err)
+		return RenewAccessToken{}, errorutil.NewAppError(errorutil.ErrUnauthorized, "mismatched session token", err)
 	}
 
 	if time.Now().After(session.ExpiresAt) {
-		return RenewAccessToken{}, NewAppError(ErrUnauthorized, "expired session", err)
+		return RenewAccessToken{}, errorutil.NewAppError(errorutil.ErrUnauthorized, "expired session", err)
 	}
 
 	accessToken, accessPayload, err := us.token.GenerateToken(refreshPayload.Username, us.config.ACCESS_TOKEN_DURATATION)
 	if err != nil {
-		return RenewAccessToken{}, NewAppError(ErrInternal, "internal server error", err)
+		return RenewAccessToken{}, errorutil.NewAppError(errorutil.ErrInternal, "internal server error", err)
 	}
 
 	return RenewAccessToken{

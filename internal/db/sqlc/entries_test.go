@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/onahvictor/bank/internal/util"
+	"github.com/0xOnah/bank/internal/util"
 	"github.com/stretchr/testify/require"
 )
 

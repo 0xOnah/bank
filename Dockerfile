@@ -3,7 +3,7 @@ FROM golang:1.24-alpine AS builder
 WORKDIR /app
 
 COPY go.mod go.sum ./
-COPY vendor/ ./vendor
+RUN go mod download
 RUN apk update && apk add curl
 RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
 

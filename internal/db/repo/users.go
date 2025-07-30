@@ -3,8 +3,8 @@ package repo
 import (
 	"context"
 
-	"github.com/onahvictor/bank/internal/db/sqlc"
-	"github.com/onahvictor/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/db/sqlc"
+	"github.com/0xOnah/bank/internal/entity"
 )
 
 type userRepo struct {
@@ -19,10 +19,12 @@ func NewUserRepo(db *sqlc.SQLStore) *userRepo {
 func ToUser(u *sqlc.User) *entity.User {
 
 	return &entity.User{
-		Username:       u.Username,
-		HashedPassword: u.HashedPassword,
-		Email:          entity.Email{Value: u.Email},
-		FullName:       u.FullName,
+		Username:          u.Username,
+		HashedPassword:    u.HashedPassword,
+		Email:             entity.Email{Value: u.Email},
+		FullName:          u.FullName,
+		CreatedAt:         u.CreatedAt,
+		PasswordChangedAt: u.PasswordChangedAt,
 	}
 
 }

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/onahvictor/bank/internal/sdk/auth"
-	"github.com/onahvictor/bank/internal/util"
+	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/util"
 	"github.com/stretchr/testify/require"
 )
 
