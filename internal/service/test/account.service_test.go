@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/onahvictor/bank/internal/config"
-	mockdb "github.com/onahvictor/bank/internal/db/mock"
-	"github.com/onahvictor/bank/internal/db/repo"
-	"github.com/onahvictor/bank/internal/entity"
-	"github.com/onahvictor/bank/internal/sdk/auth"
-	"github.com/onahvictor/bank/internal/service"
-	httptransport "github.com/onahvictor/bank/internal/transport/http"
-	"github.com/onahvictor/bank/internal/util"
+	"github.com/0xOnah/bank/internal/config"
+	mockdb "github.com/0xOnah/bank/internal/db/mock"
+	"github.com/0xOnah/bank/internal/db/repo"
+	"github.com/0xOnah/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/service"
+	httptransport "github.com/0xOnah/bank/internal/transport/http"
+	"github.com/0xOnah/bank/internal/util"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -133,7 +133,7 @@ func TestGetAccountByID(t *testing.T) {
 			transferSvc := service.NewTransferService(transferRepo, accountRepo)
 			transfHand := httptransport.NewTranserHandler(transferSvc, token)
 
-			usrSvc := service.NewUserService(userRepo, token, config.Config{},sessionRepo)
+			usrSvc := service.NewUserService(userRepo, token, config.Config{}, sessionRepo)
 			userHand := httptransport.NewUserHandler(usrSvc, token)
 
 			router := httptransport.NewRouter(accountHandler, transfHand, userHand)

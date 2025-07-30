@@ -6,12 +6,13 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/0xOnah/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/transport/sdk/errorutil"
+	"github.com/0xOnah/bank/internal/service"
+	"github.com/0xOnah/bank/internal/transport/sdk/middleware"
+	"github.com/0xOnah/bank/internal/util"
 	"github.com/gin-gonic/gin"
-	"github.com/onahvictor/bank/internal/entity"
-	"github.com/onahvictor/bank/internal/sdk/auth"
-	"github.com/onahvictor/bank/internal/service"
-	"github.com/onahvictor/bank/internal/transport/middleware"
-	"github.com/onahvictor/bank/internal/util"
 )
 
 type AccountService interface {
@@ -21,10 +22,10 @@ type AccountService interface {
 }
 type AccountHandler struct {
 	accSvc AccountService
-	token  auth.Auntenticator
+	token  auth.Authenticator
 }
 
-func NewAccountHandler(svc *service.AccountService, token auth.Auntenticator) *AccountHandler {
+func NewAccountHandler(svc *service.AccountService, token auth.Authenticator) *AccountHandler {
 	return &AccountHandler{accSvc: svc, token: token}
 }
 
@@ -54,9 +55,9 @@ func (a *AccountHandler) CreateAccount(ctx *gin.Context) {
 		Balance:  0,
 	})
 	if err != nil {
-		var appErr *service.AppError
+		var appErr *errorutil.AppError
 		if ok := errors.As(err, &appErr); ok {
-			ctx.JSON(mapErrorToStatus(appErr), util.ErrorResponse(err))
+			ctx.JSON(errorutil.MapErrorToHttpStatus(appErr), util.ErrorResponse(err))
 			slog.Info("Handled client error in CreateAccount",
 				slog.Int("statusCode", int(appErr.Code)),
 				slog.String("message", appErr.Message),
@@ -90,9 +91,9 @@ func (a *AccountHandler) GetAccountByID(ctx *gin.Context) {
 
 	account, err := a.accSvc.GetAccountByID(ctx.Request.Context(), payload.Username, req.ID)
 	if err != nil {
-		var appErr *service.AppError
+		var appErr *errorutil.AppError
 		if ok := errors.As(err, &appErr); ok {
-			statusCode := mapErrorToStatus(appErr)
+			statusCode := errorutil.MapErrorToHttpStatus(appErr)
 			slog.Debug("Unexpected service error in GetAccountByID:",
 				slog.Int("statusCode", statusCode),
 				slog.String("message", appErr.Message),

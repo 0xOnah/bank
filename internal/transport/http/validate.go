@@ -1,8 +1,8 @@
 package httptransport
 
 import (
+	"github.com/0xOnah/bank/internal/util"
 	"github.com/go-playground/validator/v10"
-	"github.com/onahvictor/bank/internal/util"
 )
 
 var validCurrency validator.Func = func(fl validator.FieldLevel) bool {

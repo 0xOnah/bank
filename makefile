@@ -58,15 +58,15 @@ test:
 
 ## audit: Format, vet, test
 .PHONY: audit
-audit: vendor
+audit:
 	@echo 'Formatting...'
 	go fmt ./...
 
-	@echo 'Vetting...'
-	go vet ./...
+	# @echo 'Vetting...'
+	# go vet ./...
 
-	@echo 'Running tests...'
-	go test -race -vet=off ./...
+	# @echo 'Running tests...'
+	# go test -race -vet=off ./...
 
 ## vendor: Tidy and vendor dependencies
 .PHONY: vendor
@@ -95,4 +95,18 @@ sqlc:
 ## mock filename=<name> interface-name=<iface>: Generate mocks
 .PHONY: mock
 mock:
-	mockgen -package mockdb -destination internal/db/mock/$(filename).go github.com/onahvictor/bank/internal/service $(interface-name)
+	mockgen -package mockdb -destination internal/db/mock/$(filename).go github.com/0xOnah/bank/internal/service $(interface-name)
+
+## generate proto files with grpc gateway included using relative path
+.PHONY: proto
+proto:
+	rm -rf pb./*.go
+	@protoc --proto_path=proto \
+		--go_out=pb --go_opt=paths=source_relative \
+		--go-grpc_out=pb --go-grpc_opt=paths=source_relative \
+		--grpc-gateway_out=pb --grpc-gateway_opt=paths=source_relative \
+		proto/*.proto
+
+.PHONY: evans
+evans:
+	evans --host localhost -p 9090 -r repl

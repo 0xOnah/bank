@@ -3,7 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/onahvictor/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/transport/sdk/errorutil"
 )
 
 type EntryRepository interface {
@@ -22,7 +23,7 @@ func NewEntryService(repo EntryRepository) *EntryService {
 func (e *EntryService) CreateEntry(ctx context.Context, arg entity.CreateEntryInput) (entity.Entry, error) {
 	_, err := e.entryRepo.CreateEntry(ctx, arg)
 	if err != nil {
-		return entity.Entry{}, NewAppError(ErrInternal, "internal error", err)
+		return entity.Entry{}, errorutil.NewAppError(errorutil.ErrInternal, "internal error", err)
 	}
 	return entity.Entry{}, nil
 }

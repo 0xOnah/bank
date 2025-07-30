@@ -10,12 +10,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/onahvictor/bank/internal/config"
-	mockdb "github.com/onahvictor/bank/internal/db/mock"
-	"github.com/onahvictor/bank/internal/entity"
-	"github.com/onahvictor/bank/internal/sdk/auth"
-	"github.com/onahvictor/bank/internal/service"
-	httptransport "github.com/onahvictor/bank/internal/transport/http"
+	"github.com/0xOnah/bank/internal/config"
+	mockdb "github.com/0xOnah/bank/internal/db/mock"
+	"github.com/0xOnah/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/service"
+	httptransport "github.com/0xOnah/bank/internal/transport/http"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )

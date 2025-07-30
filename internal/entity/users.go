@@ -4,17 +4,20 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
-	"github.com/onahvictor/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/sdk/auth"
 )
 
 var EmailExP = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 type User struct {
-	Username       string
-	HashedPassword string
-	FullName       string
-	Email          Email
+	Username          string
+	HashedPassword    string
+	FullName          string
+	Email             Email
+	CreatedAt         time.Time
+	PasswordChangedAt time.Time
 }
 
 type Email struct {

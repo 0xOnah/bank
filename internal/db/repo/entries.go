@@ -3,8 +3,8 @@ package repo
 import (
 	"context"
 
-	"github.com/onahvictor/bank/internal/db/sqlc"
-	"github.com/onahvictor/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/db/sqlc"
+	"github.com/0xOnah/bank/internal/entity"
 )
 
 type entryRepo struct {

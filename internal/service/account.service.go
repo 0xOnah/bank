@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/onahvictor/bank/internal/db/repo"
-	"github.com/onahvictor/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/db/repo"
+	"github.com/0xOnah/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/transport/sdk/errorutil"
 )
 
 type AccountRepository interface {
@@ -32,11 +33,11 @@ func (a *AccountService) CreateAccount(ctx context.Context, arg entity.CreateAcc
 	if err != nil {
 		switch {
 		case errors.Is(err, repo.ErrDuplicateAccountCurrency):
-			return nil, NewAppError(ErrBadRequest, fmt.Sprintf("an account with currency %s already exists for this user", arg.Currency), err)
+			return nil, errorutil.NewAppError(errorutil.ErrBadRequest, fmt.Sprintf("an account with currency %s already exists for this user", arg.Currency), err)
 		case errors.Is(err, repo.ErrUserNotExist):
-			return nil, NewAppError(ErrBadRequest, "this user does not exist", err)
+			return nil, errorutil.NewAppError(errorutil.ErrBadRequest, "this user does not exist", err)
 		default:
-			return nil, NewAppError(ErrInternal, "internal server error", err)
+			return nil, errorutil.NewAppError(errorutil.ErrInternal, "internal server error", err)
 		}
 	}
 	return account, nil
@@ -46,12 +47,12 @@ func (a *AccountService) GetAccountByID(ctx context.Context, username string, id
 	account, err := a.accountRepo.GetAccountByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, repo.ErrRecordNotFound) {
-			return nil, NewAppError(ErrNotFound, fmt.Sprintf("account %d not found", id), err)
+			return nil, errorutil.NewAppError(errorutil.ErrNotFound, fmt.Sprintf("account %d not found", id), err)
 		}
-		return nil, NewAppError(ErrUnknown, "failed to retrieve account due to an unexpected issue", err) // `err` here is the original repo error
+		return nil, errorutil.NewAppError(errorutil.ErrUnknown, "failed to retrieve account due to an unexpected issue", err) // `err` here is the original repo error
 	}
 	if account.Owner != username {
-		return nil, NewAppError(ErrUnauthorized, "cannot not retrieve data for this account", nil)
+		return nil, errorutil.NewAppError(errorutil.ErrUnauthorized, "cannot not retrieve data for this account", nil)
 	}
 	return account, nil
 }

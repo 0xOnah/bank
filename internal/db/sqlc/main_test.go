@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/0xOnah/bank/internal/config"
 	_ "github.com/lib/pq"
-	"github.com/onahvictor/bank/internal/config"
 )
 
 const (

@@ -4,12 +4,12 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/0xOnah/bank/internal/entity"
+	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/transport/sdk/errorutil"
+	"github.com/0xOnah/bank/internal/transport/sdk/middleware"
+	"github.com/0xOnah/bank/internal/util"
 	"github.com/gin-gonic/gin"
-	"github.com/onahvictor/bank/internal/entity"
-	"github.com/onahvictor/bank/internal/sdk/auth"
-	"github.com/onahvictor/bank/internal/service"
-	"github.com/onahvictor/bank/internal/transport/middleware"
-	"github.com/onahvictor/bank/internal/util"
 )
 
 type TransferService interface {
@@ -17,10 +17,10 @@ type TransferService interface {
 }
 type TransferHandler struct {
 	tranServ TransferService
-	token    auth.Auntenticator
+	token    auth.Authenticator
 }
 
-func NewTranserHandler(svc TransferService, token auth.Auntenticator) *TransferHandler {
+func NewTranserHandler(svc TransferService, token auth.Authenticator) *TransferHandler {
 	return &TransferHandler{tranServ: svc, token: token}
 }
 
@@ -41,6 +41,7 @@ func (t *TransferHandler) CreateTransfer(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, util.ErrorResponse(err))
 		return
 	}
+	ctx.ClientIP()
 	payload := ctx.MustGet(middleware.AuthorizationPayLoadKey).(*auth.Payload)
 
 	arg := entity.CreateTransferInput{
@@ -51,8 +52,8 @@ func (t *TransferHandler) CreateTransfer(ctx *gin.Context) {
 
 	transfer, err := t.tranServ.CreateTransferTX(ctx.Request.Context(), arg, payload.Username, req.Currency)
 	if err != nil {
-		if appErr, ok := err.(*service.AppError); ok {
-			ctx.JSON(mapErrorToStatus(appErr), util.ErrorResponse(err))
+		if appErr, ok := err.(*errorutil.AppError); ok {
+			ctx.JSON(errorutil.MapErrorToHttpStatus(appErr), util.ErrorResponse(err))
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, util.ErrorResponse(err))
