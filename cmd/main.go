@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"log"
 	"log/slog"
 	"net"
@@ -113,7 +113,7 @@ func RunGatewayServer(config config.Config, store *sqlc.SQLStore, tokenMaker aut
 
 	httpmux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, `{"server is live"}`)
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 	})
 
 	listener, err := net.Listen("tcp", config.HTTP_SERVER_ADDRESS)
