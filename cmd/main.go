@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/0xOnah/bank/doc"
 	"github.com/0xOnah/bank/internal/config"
 	"github.com/0xOnah/bank/internal/db/client"
 	"github.com/0xOnah/bank/internal/db/repo"
@@ -104,10 +105,10 @@ func RunGatewayServer(config config.Config, store *sqlc.SQLStore, tokenMaker aut
 		log.Fatal("failed to register the userServiceHandlerServer ")
 	}
 
-	httpmux := http.NewServeMux() //is they a need for this?
+	httpmux := http.NewServeMux()
 	httpmux.Handle("/", grpcmux)
 
-	fs := http.FileServer(http.Dir("doc/swagger"))
+	fs := http.FileServer(http.FS(doc.SwaggerFs))
 	httpmux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
 
 	httpmux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
