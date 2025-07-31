@@ -92,12 +92,12 @@ clean:
 sqlc:
 	sqlc generate
 
-## mock filename=<name> interface-name=<iface>: Generate mocks
+## mock: filename=<name> interface-name=<iface> Generate mocks
 .PHONY: mock
 mock:
 	mockgen -package mockdb -destination internal/db/mock/$(filename).go github.com/0xOnah/bank/internal/service $(interface-name)
 
-## generate proto files with grpc gateway included using relative path
+## proto: generate proto files with grpc gateway included using relative path
 .PHONY: proto
 proto:
 	rm -rf pb./*.go
