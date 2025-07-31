@@ -16,6 +16,7 @@ import (
 	"github.com/0xOnah/bank/internal/sdk/auth"
 	"github.com/0xOnah/bank/internal/service"
 	grpctransport "github.com/0xOnah/bank/internal/transport/grpc"
+	httptransport "github.com/0xOnah/bank/internal/transport/http"
 	"github.com/0xOnah/bank/pb"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -56,30 +57,30 @@ func main() {
 	RunGatewayServer(config, store, auth)
 }
 
-// func RunHttpServer(store *sqlc.SQLStore, config config.Config, auth auth.Authenticator) {
-// 	accountRepo := repo.NewAccountRepo(store)
-// 	transfRepo := repo.NewTransferRepo(store)
-// 	userRepo := repo.NewUserRepo(store)
-// 	sessionRepo := repo.NewSessionRepo(store)
+func RunHttpServer(store *sqlc.SQLStore, config config.Config, auth auth.Authenticator) {
+	accountRepo := repo.NewAccountRepo(store)
+	transfRepo := repo.NewTransferRepo(store)
+	userRepo := repo.NewUserRepo(store)
+	sessionRepo := repo.NewSessionRepo(store)
 
-// 	//services setup
-// 	accountSvc := service.NewAccountService(accountRepo)
-// 	transferSvc := service.NewTransferService(transfRepo, accountRepo)
-// 	usrSvc := service.NewUserService(userRepo, auth, config, sessionRepo)
-// 	//handlers
+	//services setup
+	accountSvc := service.NewAccountService(accountRepo)
+	transferSvc := service.NewTransferService(transfRepo, accountRepo)
+	usrSvc := service.NewUserService(userRepo, auth, config, sessionRepo)
+	//handlers
 
-// 	accountHand := httptransport.NewAccountHandler(accountSvc, auth)
-// 	transfHand := httptransport.NewTranserHandler(transferSvc, auth)
-// 	userHand := httptransport.NewUserHandler(usrSvc, auth)
+	accountHand := httptransport.NewAccountHandler(accountSvc, auth)
+	transfHand := httptransport.NewTranserHandler(transferSvc, auth)
+	userHand := httptransport.NewUserHandler(usrSvc, auth)
 
-// 	//router & routes setup
-// 	router := httptransport.NewRouter(accountHand, transfHand, userHand)
+	//router & routes setup
+	router := httptransport.NewRouter(accountHand, transfHand, userHand)
 
-// 	if err := router.Serve(config.HTTP_SERVER_ADDRESS); err != nil {
-// 		slog.Error("msg", slog.Any("failed to run http server", err))
-// 		os.Exit(1)
-// 	}
-// }
+	if err := router.Serve(config.HTTP_SERVER_ADDRESS); err != nil {
+		slog.Error("msg", slog.Any("failed to run http server", err))
+		os.Exit(1)
+	}
+}
 
 func RunGatewayServer(config config.Config, store *sqlc.SQLStore, tokenMaker auth.Authenticator) {
 	ur := repo.NewUserRepo(store)
@@ -105,8 +106,13 @@ func RunGatewayServer(config config.Config, store *sqlc.SQLStore, tokenMaker aut
 
 	httpmux := http.NewServeMux() //is they a need for this?
 	httpmux.Handle("/", grpcmux)
+
+	fs := http.FileServer(http.Dir("doc/swagger"))
+	httpmux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
+
 	httpmux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "server is live")
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintln(w, `{"server is live"}`)
 	})
 
 	listener, err := net.Listen("tcp", config.HTTP_SERVER_ADDRESS)
