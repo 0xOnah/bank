@@ -18,7 +18,7 @@ import (
 	"github.com/0xOnah/bank/internal/sdk/auth"
 	"github.com/0xOnah/bank/internal/service"
 	httptransport "github.com/0xOnah/bank/internal/transport/http"
-	"github.com/0xOnah/bank/internal/util"
+	"github.com/0xOnah/bank/internal/sdk/util"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
