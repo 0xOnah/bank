@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/0xOnah/bank/internal/util"
+	"github.com/0xOnah/bank/internal/sdk/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,7 +43,6 @@ func TestUpdateAccount(t *testing.T) {
 	require.Equal(t, account1.Owner, account2.Owner)
 	require.Equal(t, arg.Balance, account2.Balance)
 	require.Equal(t, account1.Currency, account2.Currency)
-	require.Equal(t, arg.Balance, account2.Balance)
 	require.WithinDuration(t, account1.CreatedAt, account2.CreatedAt, time.Second)
 }
 func TestDeleteAccount(t *testing.T) {

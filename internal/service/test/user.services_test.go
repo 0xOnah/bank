@@ -37,6 +37,8 @@ func (cr createUserTest) Matches(x any) bool {
 	}
 
 	cr.arg.HashedPassword = arg.HashedPassword
+	cr.arg.CreatedAt = arg.CreatedAt
+	cr.arg.PasswordChangedAt = arg.PasswordChangedAt
 	return reflect.DeepEqual(cr.arg, arg)
 }
 
@@ -49,7 +51,7 @@ func EqCreateUser(arg entity.User, password string) gomock.Matcher {
 }
 
 func TestCreateUser(t *testing.T) {
-	user, err := entity.NewUser("victor", "secret", "victor onah", "onahvictor@gmail.com")
+	user, err := entity.NewUser("victor", "secret12345", "victor onah", "onahvictor@gmail.com")
 	require.NoError(t, err)
 
 	type TestCases []struct {
@@ -60,16 +62,15 @@ func TestCreateUser(t *testing.T) {
 	}
 	var testCases = TestCases{
 		{
-			name: "OK: Account Created",
+			name: "OK: User Created",
 			body: map[string]string{
 				"username": user.Username,
-				"password": "secret",
+				"password": "secret12345",
 				"fullname": user.FullName,
 				"email":    user.Email.String(),
-				"currency": randomAccount().Currency,
 			},
 			buildStubs: func(repo *mockdb.MockUserRepository) {
-				repo.EXPECT().CreateUser(gomock.Any(), EqCreateUser(user, "secret")).Times(1).Return(&user, nil)
+				repo.EXPECT().CreateUser(gomock.Any(), EqCreateUser(user, "secret12345")).Times(1).Return(&user, nil)
 			},
 			checkResponse: func(r *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, r.Code)
@@ -88,7 +89,7 @@ func TestCreateUser(t *testing.T) {
 			name: "Internal server Error",
 			body: map[string]string{
 				"username": user.Username,
-				"password": "secret",
+				"password": "secret12345",
 				"fullname": user.FullName,
 				"email":    user.Email.String(),
 			},
@@ -102,7 +103,7 @@ func TestCreateUser(t *testing.T) {
 			name: "Wrong Email",
 			body: map[string]string{
 				"username": user.Username,
-				"password": "secret",
+				"password": "secret12345",
 				"fullname": user.FullName,
 				"email":    "invalid_email",
 			},
@@ -140,7 +141,7 @@ func TestCreateUser(t *testing.T) {
 			data, err := json.Marshal(value.body)
 			require.NoError(t, err)
 
-			reader := bytes.NewReader([]byte(data))
+			reader := bytes.NewReader(data)
 			req, err := http.NewRequest(http.MethodPost, "/user", reader)
 			req.Header.Set("Content-Type", "application/json")
 			require.NoError(t, err)

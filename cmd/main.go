@@ -53,9 +53,9 @@ func main() {
 		os.Exit(1)
 	}
 	//repo setup
-	// RunHttpServer(store, config, auth)
+	// RunHttpServer(store, config, auth) 
 	// go func() { RunGrpcServer(config, store, auth) }()
-	RunGatewayServer(config, store, auth)
+	RunGatewayServer(config, store, auth) 
 }
 
 func RunHttpServer(store *sqlc.SQLStore, config config.Config, auth auth.Authenticator) {

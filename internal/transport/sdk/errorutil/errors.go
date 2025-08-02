@@ -20,12 +20,12 @@ const (
 
 //NewError(svcErr ErrorKind, appErr error) Error
 //Error()string{
-// return 
+// return
 //}
 //AppErr() error
 //SvcErr() Errorkind
 
-//in the internal error if the error is not an Error tyoe meaning an unxpected event then we log internal
+// in the internal error if the error is not an Error tyoe meaning an unxpected event then we log internal
 type AppError struct {
 	Code    ErrorKind
 	Message string

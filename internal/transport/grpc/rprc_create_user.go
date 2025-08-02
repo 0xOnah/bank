@@ -2,12 +2,16 @@ package grpctransport
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
+	"github.com/0xOnah/bank/internal/sdk/validator"
 	"github.com/0xOnah/bank/internal/service"
 	"github.com/0xOnah/bank/internal/transport/sdk/errorutil"
 	"github.com/0xOnah/bank/pb"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -21,8 +25,12 @@ func (uh *UserHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequest
 	})
 
 	if err != nil {
+		grpcErr := MapValidationErrors(err)
+		if grpcErr != nil {
+			return nil, grpcErr
+		}
 		if appErr, ok := err.(*errorutil.AppError); ok {
-			slog.Warn("createUser service", slog.Any("createUser service", appErr.Err.Error()))
+			slog.Warn("createUser.service", slog.Any("validation failed", appErr.Err.Error()))
 			return nil, status.Errorf(errorutil.MapErrorToGRPCStatus(appErr), appErr.Message)
 		}
 	}
@@ -64,4 +72,26 @@ func (uh *UserHandler) LoginUser(ctx context.Context, req *pb.LoginUserRequest) 
 			CreatedAt:         timestamppb.New(userValue.User.CreatedAt),
 		},
 	}, nil
+}
+
+func MapValidationErrors(err error) error {
+	var violations []*errdetails.BadRequest_FieldViolation
+	var validatorErr *validator.Validator
+	ok := errors.As(err, &validatorErr)
+	if ok {
+		for key, value := range validatorErr.ErrVal {
+			violations = append(violations, &errdetails.BadRequest_FieldViolation{
+				Field:       key,
+				Description: value,
+			})
+		}
+		badRequest := &errdetails.BadRequest{FieldViolations: violations}
+		statusInvalid := status.New(codes.InvalidArgument, "invalid request")
+		statusDetails, err := statusInvalid.WithDetails(badRequest)
+		if err != nil {
+			return statusInvalid.Err()
+		}
+		return statusDetails.Err()
+	}
+	return nil
 }

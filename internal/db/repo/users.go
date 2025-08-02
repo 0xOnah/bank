@@ -16,17 +16,19 @@ func NewUserRepo(db *sqlc.SQLStore) *userRepo {
 		db: db,
 	}
 }
-func ToUser(u *sqlc.User) *entity.User {
-
+func ToUser(u *sqlc.User) (*entity.User, error) {
+	email, err := entity.NewEmail(u.Email)
+	if err != nil {
+		return nil, err
+	}
 	return &entity.User{
 		Username:          u.Username,
 		HashedPassword:    u.HashedPassword,
-		Email:             entity.Email{Value: u.Email},
+		Email:             email,
 		FullName:          u.FullName,
 		CreatedAt:         u.CreatedAt,
 		PasswordChangedAt: u.PasswordChangedAt,
-	}
-
+	}, nil
 }
 func (ur *userRepo) CreateUser(ctx context.Context, arg entity.User) (*entity.User, error) {
 	user, err := ur.db.CreateUser(ctx, sqlc.CreateUserParams{
@@ -39,7 +41,7 @@ func (ur *userRepo) CreateUser(ctx context.Context, arg entity.User) (*entity.Us
 		return nil, err
 	}
 
-	return ToUser(user), nil
+	return ToUser(user)
 
 }
 
@@ -48,5 +50,5 @@ func (ur *userRepo) GetUser(ctx context.Context, username string) (*entity.User,
 	if err != nil {
 		return nil, err
 	}
-	return ToUser(user), err
+	return ToUser(user)
 }

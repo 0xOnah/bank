@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/0xOnah/bank/internal/sdk/auth"
-	"github.com/0xOnah/bank/internal/util"
+	"github.com/0xOnah/bank/internal/sdk/util"
 	"github.com/stretchr/testify/require"
 )
 

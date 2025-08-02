@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/0xOnah/bank/internal/sdk/util"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -24,7 +25,7 @@ func NewRouter(accountHand *AccountHandler, transferHand *TransferHandler, userH
 	router := gin.Default()
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("currency", validCurrency)
+		v.RegisterValidation("currency", util.ValidCurrency)
 	}
 	accountHand.MapAccountRoutes(router)
 	transferHand.MapAccountRoutes(router)

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -49,8 +50,9 @@ type CreateUserInput struct {
 
 func (us *userService) CreateUser(ctx context.Context, cr CreateUserInput) (entity.User, error) {
 	user, err := entity.NewUser(cr.Username, cr.Password, cr.Fullname, cr.Email)
+	fmt.Println(err)
 	if err != nil {
-		return entity.User{}, errorutil.NewAppError(errorutil.ErrBadRequest, "failed to create user", err)
+		return entity.User{}, errorutil.NewAppError(errorutil.ErrBadRequest, "failed validation", err)
 	}
 
 	createdUser, err := us.userRepo.CreateUser(ctx, user)
