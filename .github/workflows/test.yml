@@ -40,4 +40,6 @@ jobs:
         run: make build
 
       - name: Test
+        env: 
+          DSN: ${{ secrets.DSN }}
         run: make test 
