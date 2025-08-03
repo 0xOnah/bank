@@ -52,6 +52,11 @@ func (uh *UserHandler) LoginUser(ctx context.Context, req *pb.LoginUserRequest) 
 		UserAgent: metadata.UserAgent,
 	})
 	if err != nil {
+		grpcErr := MapValidationErrors(err)
+		if grpcErr != nil {
+			return nil, grpcErr
+		}
+
 		if appErr, ok := err.(*errorutil.AppError); ok {
 			fmt.Println(appErr)
 			slog.Warn("loginUser service", slog.Any("app error", appErr.Err.Error()))

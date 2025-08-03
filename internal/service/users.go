@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/0xOnah/bank/internal/db/repo"
 	"github.com/0xOnah/bank/internal/entity"
 	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/sdk/validator"
 	"github.com/0xOnah/bank/internal/transport/sdk/errorutil"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -86,6 +88,15 @@ type Logininput struct {
 }
 
 func (us *userService) Login(ctx context.Context, arg Logininput) (*AuthResult, error) {
+	v := validator.NewValidator()
+	v.Check(arg.Username != "", "username", "cannot be empty")
+	v.Check(regexp.MustCompile("^[a-zA-Z0-9]+$").MatchString(arg.Username), "username", "can only contain letters, numbers and spaces")
+	v.Check(arg.Password != "", "password", "cannot be empty")
+
+	if !v.Valid() {
+		return nil, v
+	}
+
 	user, err := us.userRepo.GetUser(ctx, arg.Username)
 	if err != nil {
 		if err == repo.ErrUserNotFound {

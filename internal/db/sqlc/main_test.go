@@ -6,7 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/0xOnah/bank/internal/config"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
 
@@ -19,15 +21,19 @@ var testDB *sql.DB
 
 func TestMain(m *testing.M) {
 	var err error
-	cfg, err := config.LoadConfig("../../..")
-	if err != nil {
-		log.Fatal("cannot load config", err)
-	}
-
-	testDB, err = sql.Open(dbDriver, cfg.DSN)
+	testDB, err = sql.Open(dbDriver, os.Getenv("DSN"))
 	if err != nil {
 		log.Fatal("cannot connect to db", err)
 	}
+	driver, err := postgres.WithInstance(testDB, &postgres.Config{})
+	if err != nil {
+		log.Fatal("failed to create driver db", err)
+	}
+	ma, err := migrate.NewWithDatabaseInstance("file://../migrations", "postgres", driver)
+	if err != nil {
+		log.Fatal("failed to create migrate instance", err)
+	}
+	ma.Up()
 	testQueries = New(testDB)
 
 	os.Exit(m.Run())
