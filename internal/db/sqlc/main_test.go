@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/0xOnah/bank/internal/config"
 	_ "github.com/lib/pq"
 )
 
@@ -19,12 +18,7 @@ var testDB *sql.DB
 
 func TestMain(m *testing.M) {
 	var err error
-	cfg, err := config.LoadConfig("../../..")
-	if err != nil {
-		log.Fatal("cannot load config", err)
-	}
-
-	testDB, err = sql.Open(dbDriver, cfg.DSN)
+	testDB, err = sql.Open(dbDriver, "postgresql://postgres:secret@localhost:5432/bank?sslmode=disable")
 	if err != nil {
 		log.Fatal("cannot connect to db", err)
 	}
