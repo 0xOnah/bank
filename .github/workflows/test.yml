@@ -36,20 +36,8 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.24.x'
-
-      - name: Install migrate
-        run: |
-          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
-          sudo mv migrate /usr/local/bin/
-          which migrate
-
       - name: Build
         run: make build
-
-      - name: Run migrations
-        run: |
-          echo "DSN=postgresql://postgres:secret@localhost:5432/bank?sslmode=disable" > app.env
-          make migrations-up
 
       - name: Test
         run: make test 

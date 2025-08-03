@@ -56,7 +56,7 @@ func (r *Router) Serve(port string) error {
 	quit := make(chan os.Signal, 1)
 
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	fmt.Printf("%s, signal recieved shutting down server\n", (<-quit).String())
+	slog.Info("signal recieved shutting down server", slog.Any("signal", (<-quit).String()))
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 	defer cancel()
@@ -71,6 +71,6 @@ func (r *Router) Serve(port string) error {
 		return fmt.Errorf("server closed unexpectedly: %w", err)
 	}
 
-	fmt.Println("Server shutdown complete")
+	slog.Info("Server shutdown complete")
 	return nil
 }
