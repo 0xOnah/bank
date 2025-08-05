@@ -4,6 +4,7 @@ package pb;
 
 import "rpc_create_user.proto";
 import "rpc_login_user.proto";
+import "rpc_update_user.proto";
 import "google/api/annotations.proto";
 
 option go_package="github.com/0xOnah/bank/pb";
@@ -19,6 +20,13 @@ service UserService {
     rpc LoginUser(LoginUserRequest) returns (LoginUserResponse){
     option (google.api.http) = {
       post: "/v1/login_user"
+      body: "*"
+    };
+    }
+
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse){
+    option (google.api.http) = {
+      patch: "/v1/update_user"
       body: "*"
     };
     }

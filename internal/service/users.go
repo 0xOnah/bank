@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -28,7 +27,7 @@ type SessionRepository interface {
 }
 
 type userService struct {
-	userRepo    UserRepository
+	UserRepo    UserRepository
 	token       auth.Authenticator
 	config      *config.Config
 	SessionRepo SessionRepository
@@ -36,7 +35,7 @@ type userService struct {
 
 func NewUserService(ur UserRepository, token auth.Authenticator, config config.Config, sr SessionRepository) *userService {
 	return &userService{
-		userRepo:    ur,
+		UserRepo:    ur,
 		token:       token,
 		config:      &config,
 		SessionRepo: sr,
@@ -52,18 +51,19 @@ type CreateUserInput struct {
 
 func (us *userService) CreateUser(ctx context.Context, cr CreateUserInput) (entity.User, error) {
 	user, err := entity.NewUser(cr.Username, cr.Password, cr.Fullname, cr.Email)
-	fmt.Println(err)
 	if err != nil {
 		return entity.User{}, errorutil.NewAppError(errorutil.ErrBadRequest, "failed validation", err)
 	}
 
-	createdUser, err := us.userRepo.CreateUser(ctx, user)
+	createdUser, err := us.UserRepo.CreateUser(ctx, user)
 	if err != nil {
 		errvalue, ok := err.(*pq.Error)
 		if ok {
 			switch {
-			case strings.Contains(errvalue.Error(), "duplicate"):
-				return entity.User{}, errorutil.NewAppError(errorutil.ErrBadRequest, "this user already exist", err)
+			case strings.Contains(errvalue.Error(), "users_email_key"):
+				return entity.User{}, errorutil.NewAppError(errorutil.ErrBadRequest, "email already in use", err)
+			case strings.Contains(errvalue.Error(), "users_pkey"):
+				return entity.User{}, errorutil.NewAppError(errorutil.ErrBadRequest, "username already in use", err)
 			}
 		}
 		return entity.User{}, errorutil.NewAppError(errorutil.ErrInternal, "internal server error", err)
@@ -97,7 +97,7 @@ func (us *userService) Login(ctx context.Context, arg Logininput) (*AuthResult, 
 		return nil, v
 	}
 
-	user, err := us.userRepo.GetUser(ctx, arg.Username)
+	user, err := us.UserRepo.GetUser(ctx, arg.Username)
 	if err != nil {
 		if err == repo.ErrUserNotFound {
 			return nil, errorutil.NewAppError(errorutil.ErrBadRequest, "user not found", err)

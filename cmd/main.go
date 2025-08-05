@@ -72,20 +72,20 @@ func main() {
 		os.Exit(1)
 	}
 	// RunHttpServer(store, config, auth)
-	// go func() { RunGrpcServer(config, store, auth) }()
+	go func() { RunGrpcServer(config, store, auth) }()
 	RunGatewayServer(config, store, auth)
 }
 
 func RunHttpServer(store *sqlc.SQLStore, config config.Config, auth auth.Authenticator) {
 	accountRepo := repo.NewAccountRepo(store)
 	transfRepo := repo.NewTransferRepo(store)
-	userRepo := repo.NewUserRepo(store)
+	UserRepo := repo.NewUserRepo(store)
 	sessionRepo := repo.NewSessionRepo(store)
 
 	//services setup
 	accountSvc := service.NewAccountService(accountRepo)
 	transferSvc := service.NewTransferService(transfRepo, accountRepo)
-	usrSvc := service.NewUserService(userRepo, auth, config, sessionRepo)
+	usrSvc := service.NewUserService(UserRepo, auth, config, sessionRepo)
 	//handlers
 
 	accountHand := httptransport.NewAccountHandler(accountSvc, auth)
@@ -104,8 +104,10 @@ func RunHttpServer(store *sqlc.SQLStore, config config.Config, auth auth.Authent
 func RunGatewayServer(config config.Config, store *sqlc.SQLStore, tokenMaker auth.Authenticator) {
 	ur := repo.NewUserRepo(store)
 	sr := repo.NewSessionRepo(store)
+	UserRepo := repo.NewUserRepo(store)
+
 	usrSvc := service.NewUserService(ur, tokenMaker, config, sr)
-	UserHandler := grpctransport.NewUserHandler(usrSvc)
+	UserHandler := grpctransport.NewUserHandler(usrSvc, UserRepo, tokenMaker)
 
 	httpGateWayMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
 		MarshalOptions: protojson.MarshalOptions{
@@ -150,10 +152,12 @@ func RunGatewayServer(config config.Config, store *sqlc.SQLStore, tokenMaker aut
 func RunGrpcServer(config config.Config, store *sqlc.SQLStore, tokenMaker auth.Authenticator) {
 	ur := repo.NewUserRepo(store)
 	sr := repo.NewSessionRepo(store)
+	UserRepo := repo.NewUserRepo(store)
+
 	usrSvc := service.NewUserService(ur, tokenMaker, config, sr)
 
 	grpcServer := grpc.NewServer()
-	UserHandler := grpctransport.NewUserHandler(usrSvc)
+	UserHandler := grpctransport.NewUserHandler(usrSvc, UserRepo, tokenMaker)
 	reflection.Register(grpcServer) //imagince it as a self docnumentation for the server
 	pb.RegisterUserServiceServer(grpcServer, UserHandler)
 
@@ -171,4 +175,5 @@ func RunGrpcServer(config config.Config, store *sqlc.SQLStore, tokenMaker auth.A
 	}
 }
 
-//
+
+
