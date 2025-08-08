@@ -100,7 +100,7 @@ mock:
 ## proto: generate proto files with grpc gateway included using relative path
 .PHONY: proto
 proto:
-	rm -rf pb./*.go
+	rm -rf pb/*.go
 	rm -rf doc/swagger/*.swagger.json	
 	@protoc --proto_path=proto \
 		--go_out=pb --go_opt=paths=source_relative \

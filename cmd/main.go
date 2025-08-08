@@ -3,11 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"log"
-	"log/slog"
 	"net"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/0xOnah/bank/doc"
@@ -16,78 +13,79 @@ import (
 	"github.com/0xOnah/bank/internal/db/repo"
 	"github.com/0xOnah/bank/internal/db/sqlc"
 	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/sdk/logger"
 	"github.com/0xOnah/bank/internal/service"
 	grpctransport "github.com/0xOnah/bank/internal/transport/grpc"
 	httptransport "github.com/0xOnah/bank/internal/transport/http"
 	"github.com/0xOnah/bank/pb"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func main() {
-	//logger
-	logHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		AddSource: false,
-		Level:     slog.LevelDebug,
-	}).WithAttrs([]slog.Attr{})
-
-	slog.SetDefault(slog.New(logHandler))
-
 	//config
 	config, err := config.LoadConfig(".")
 	if err != nil {
-		slog.Error("msg", slog.Any("failed to load config", err))
-		os.Exit(1)
+		return
+	}
+
+	logger, err := logger.InitLogger(&config)
+	if err != nil {
+		log.Fatal().Err(err).Send() // using global log to kill program if our custom logger is not initizalied
 	}
 
 	//db setup
 	database, err := db.NewDBClient(config.DSN)
 	if err != nil {
-		slog.Error("failed to connect to the database", slog.Any("error", err))
-		os.Exit(1)
+		logger.Fatal().Err(err).Msg("invalid database DSN")
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	err = database.Ping(ctx) //ensure connection
 	if err != nil {
-		slog.Error("context expired cannot connect to the database", slog.Any("error", err))
-		os.Exit(1)
+		logger.Fatal().Err(err).Msg("failed to connect to the database")
 	}
+	logger.Info().Msg("database connection esterblished")
+
 	err = database.MigrateUP() //migration
 	if err != nil {
-		slog.Error("failed to migrate up", slog.Any("error", err))
-		os.Exit(1)
+		logger.Fatal().Err(err).Msg("failed to run up-migration")
 	}
+	logger.Info().Msg("database up migration successful")
 
-	slog.Info("db migration succesful")
 	store := sqlc.NewStore(database.Client)
 
 	//authenticator
 	auth, err := auth.NewJWTMaker(config.TOKEN_SYMMETRIC_KEY)
 	if err != nil {
-		slog.Error("failed to create the JWT maker", slog.Any("error", err))
-		os.Exit(1)
+		logger.Fatal().Err(err).Msg("jwt-maker not initialized")
 	}
 	// RunHttpServer(store, config, auth)
-	// go func() { RunGrpcServer(config, store, auth) }()
-	RunGatewayServer(config, store, auth)
+	RunGrpcServer(config, store, auth, logger)
+	// RunGatewayServer(config, store, auth, logger)
 }
 
-func RunHttpServer(store *sqlc.SQLStore, config config.Config, auth auth.Authenticator) {
+func RunHttpServer(
+	store *sqlc.SQLStore,
+	config config.Config,
+	auth auth.Authenticator,
+) {
 	accountRepo := repo.NewAccountRepo(store)
 	transfRepo := repo.NewTransferRepo(store)
-	userRepo := repo.NewUserRepo(store)
+	UserRepo := repo.NewUserRepo(store)
 	sessionRepo := repo.NewSessionRepo(store)
 
 	//services setup
 	accountSvc := service.NewAccountService(accountRepo)
 	transferSvc := service.NewTransferService(transfRepo, accountRepo)
-	usrSvc := service.NewUserService(userRepo, auth, config, sessionRepo)
+	usrSvc := service.NewUserService(UserRepo, auth, config, sessionRepo)
 	//handlers
-
 	accountHand := httptransport.NewAccountHandler(accountSvc, auth)
 	transfHand := httptransport.NewTranserHandler(transferSvc, auth)
 	userHand := httptransport.NewUserHandler(usrSvc, auth)
@@ -96,16 +94,23 @@ func RunHttpServer(store *sqlc.SQLStore, config config.Config, auth auth.Authent
 	router := httptransport.NewRouter(accountHand, transfHand, userHand)
 
 	if err := router.Serve(config.HTTP_SERVER_ADDRESS); err != nil {
-		slog.Error("failed to run http server", slog.Any("error", err))
-		os.Exit(1)
+		return
 	}
 }
 
-func RunGatewayServer(config config.Config, store *sqlc.SQLStore, tokenMaker auth.Authenticator) {
+func RunGatewayServer(
+	config config.Config,
+	store *sqlc.SQLStore,
+	tokenMaker auth.Authenticator,
+	log *zerolog.Logger,
+) {
 	ur := repo.NewUserRepo(store)
 	sr := repo.NewSessionRepo(store)
+	UserRepo := repo.NewUserRepo(store)
+
 	usrSvc := service.NewUserService(ur, tokenMaker, config, sr)
-	UserHandler := grpctransport.NewUserHandler(usrSvc)
+	svcLogger := logger.ServiceLogger(log, "auth_Service")
+	UserHandler := grpctransport.NewUserHandler(usrSvc, UserRepo, tokenMaker, svcLogger)
 
 	httpGateWayMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
 		MarshalOptions: protojson.MarshalOptions{
@@ -120,7 +125,7 @@ func RunGatewayServer(config config.Config, store *sqlc.SQLStore, tokenMaker aut
 
 	err := pb.RegisterUserServiceHandlerServer(ctx, httpGateWayMux, UserHandler)
 	if err != nil {
-		log.Fatal("failed to register the userServiceHandlerServer ")
+
 	}
 
 	httpmux := http.NewServeMux()
@@ -136,39 +141,46 @@ func RunGatewayServer(config config.Config, store *sqlc.SQLStore, tokenMaker aut
 
 	listener, err := net.Listen("tcp", config.HTTP_SERVER_ADDRESS)
 	if err != nil {
-		log.Fatal("failed to create listener", err)
+		log.Error().Err(err).Msg("failed to create grpc-gateway listener")
 	}
 
-	log.Println("server started at Port:", config.HTTP_SERVER_ADDRESS)
+	log.Info().Str("port", config.GRPC_SERVER_ADDRESS).Msg("starting grpc-gateway server")
 	err = http.Serve(listener, httpmux)
 	if err != nil {
-		log.Fatal("failed to startup server")
+		log.Error().Err(err).Msg("failed to start-up grpc-gateway server")
 	}
 }
 
 // starting a grpc server
-func RunGrpcServer(config config.Config, store *sqlc.SQLStore, tokenMaker auth.Authenticator) {
+func RunGrpcServer(
+	config config.Config,
+	store *sqlc.SQLStore,
+	tokenMaker auth.Authenticator,
+	log *zerolog.Logger,
+) {
 	ur := repo.NewUserRepo(store)
 	sr := repo.NewSessionRepo(store)
+	UserRepo := repo.NewUserRepo(store)
 	usrSvc := service.NewUserService(ur, tokenMaker, config, sr)
+	UserHandler := grpctransport.NewUserHandler(usrSvc, UserRepo, tokenMaker, log)
 
-	grpcServer := grpc.NewServer()
-	UserHandler := grpctransport.NewUserHandler(usrSvc)
-	reflection.Register(grpcServer) //imagince it as a self docnumentation for the server
+	logger := grpctransport.LoggingInterceptor(log)
+	recoverPanic := grpctransport.UnaryRecoverPanicInterceptor(log)
+
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(recoverPanic, logger))
+
+	reflection.Register(grpcServer)
+
 	pb.RegisterUserServiceServer(grpcServer, UserHandler)
 
 	listener, err := net.Listen("tcp", config.GRPC_SERVER_ADDRESS)
 	if err != nil {
-		slog.Error("failed to create net listener", slog.Any("error", err))
-		os.Exit(1)
+		log.Error().Err(err).Msg("failed to create grpc listener")
 	}
 
-	log.Printf("starting grpc server at port %s", config.GRPC_SERVER_ADDRESS)
+	log.Info().Str("port", config.GRPC_SERVER_ADDRESS).Msg("starting grpc server")
 	err = grpcServer.Serve(listener)
 	if err != nil {
-		slog.Error("cannot start grpc client", slog.Any("error", err))
-		os.Exit(1)
+		log.Error().Err(err).Msg("failed to statup grpc server")
 	}
 }
-
-//

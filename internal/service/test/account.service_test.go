@@ -16,9 +16,9 @@ import (
 	"github.com/0xOnah/bank/internal/db/repo"
 	"github.com/0xOnah/bank/internal/entity"
 	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/sdk/util"
 	"github.com/0xOnah/bank/internal/service"
 	httptransport "github.com/0xOnah/bank/internal/transport/http"
-	"github.com/0xOnah/bank/internal/sdk/util"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -125,7 +125,7 @@ func TestGetAccountByID(t *testing.T) {
 
 			accountRepo := mockdb.NewMockAccountRepository(ctrl)
 			transferRepo := mockdb.NewMockTransferRepository(ctrl)
-			userRepo := mockdb.NewMockUserRepository(ctrl)
+			UserRepo := mockdb.NewMockUserRepository(ctrl)
 			sessionRepo := mockdb.NewMockSessionRepository(ctrl)
 			accountSvc := service.NewAccountService(accountRepo)
 			accountHandler := httptransport.NewAccountHandler(accountSvc, token)
@@ -133,7 +133,7 @@ func TestGetAccountByID(t *testing.T) {
 			transferSvc := service.NewTransferService(transferRepo, accountRepo)
 			transfHand := httptransport.NewTranserHandler(transferSvc, token)
 
-			usrSvc := service.NewUserService(userRepo, token, config.Config{}, sessionRepo)
+			usrSvc := service.NewUserService(UserRepo, token, config.Config{}, sessionRepo)
 			userHand := httptransport.NewUserHandler(usrSvc, token)
 
 			router := httptransport.NewRouter(accountHandler, transfHand, userHand)

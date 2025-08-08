@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package pb;
+import "users.proto";
+option go_package="github.com/0xOnah/bank/pb";
+
+message UpdateUserRequest{
+    string username = 1;
+    optional string full_name = 2;
+    optional string password = 3;
+    optional string email = 4;
+}
+
+message UpdateUserResponse{
+    User user = 1;
+}

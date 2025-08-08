@@ -125,7 +125,7 @@ func TestCreateUser(t *testing.T) {
 
 			accountRepo := mockdb.NewMockAccountRepository(ctrl)
 			transferRepo := mockdb.NewMockTransferRepository(ctrl)
-			userRepo := mockdb.NewMockUserRepository(ctrl)
+			UserRepo := mockdb.NewMockUserRepository(ctrl)
 			sessionRepo := mockdb.NewMockSessionRepository(ctrl)
 			accountSvc := service.NewAccountService(accountRepo)
 			accountHandler := httptransport.NewAccountHandler(accountSvc, maker)
@@ -133,7 +133,7 @@ func TestCreateUser(t *testing.T) {
 			transferSvc := service.NewTransferService(transferRepo, accountRepo)
 			transfHand := httptransport.NewTranserHandler(transferSvc, maker)
 
-			usrSvc := service.NewUserService(userRepo, maker, config.Config{}, sessionRepo)
+			usrSvc := service.NewUserService(UserRepo, maker, config.Config{}, sessionRepo)
 			userHand := httptransport.NewUserHandler(usrSvc, maker)
 
 			router := httptransport.NewRouter(accountHandler, transfHand, userHand)
@@ -146,7 +146,7 @@ func TestCreateUser(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			require.NoError(t, err)
 
-			value.buildStubs(userRepo)
+			value.buildStubs(UserRepo)
 			rec := httptest.NewRecorder()
 			router.Mux.ServeHTTP(rec, req)
 			value.checkResponse(rec)
