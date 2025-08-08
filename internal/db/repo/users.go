@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/0xOnah/bank/internal/db/sqlc"
@@ -50,6 +51,9 @@ func (ur *UserRepo) CreateUser(ctx context.Context, arg entity.User) (*entity.Us
 func (ur *UserRepo) GetUser(ctx context.Context, username string) (*entity.User, error) {
 	user, err := ur.db.GetUser(ctx, username)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
 		return nil, err
 	}
 	return ToUser(user)

@@ -2,7 +2,6 @@ package grpctransport
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/0xOnah/bank/internal/service"
 	"github.com/0xOnah/bank/internal/transport/sdk/errorutil"
@@ -25,7 +24,6 @@ func (uh *UserHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequest
 			return nil, grpcErr
 		}
 		if appErr, ok := err.(*errorutil.AppError); ok {
-			slog.Warn("createUser.service", slog.Any("validation failed", appErr.Err.Error()))
 			return nil, status.Errorf(errorutil.MapErrorToGRPCStatus(appErr), appErr.Message)
 		}
 	}
@@ -49,8 +47,11 @@ func (uh *UserHandler) LoginUser(ctx context.Context, req *pb.LoginUserRequest) 
 		UserAgent: metadata.UserAgent,
 	})
 	if err != nil {
+		grpcErr := MapValidationErrors(err)
+		if grpcErr != nil {
+			return nil, grpcErr
+		}
 		if appErr, ok := err.(*errorutil.AppError); ok {
-			slog.Warn("loginUser service", slog.Any("app error", appErr.Err.Error()))
 			return nil, status.Errorf(errorutil.MapErrorToGRPCStatus(appErr), appErr.Message)
 		}
 	}

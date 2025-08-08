@@ -6,8 +6,10 @@ import (
 	"github.com/0xOnah/bank/internal/db/repo"
 	"github.com/0xOnah/bank/internal/entity"
 	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/sdk/logger"
 	"github.com/0xOnah/bank/internal/service"
 	"github.com/0xOnah/bank/pb"
+	"github.com/rs/zerolog"
 )
 
 type userService interface {
@@ -21,12 +23,15 @@ type UserHandler struct {
 	us       userService
 	ur       *repo.UserRepo
 	jwtMaker auth.Authenticator
+	logger   *zerolog.Logger
 }
 
-func NewUserHandler(us userService, ur *repo.UserRepo, jtmaker auth.Authenticator) *UserHandler {
+func NewUserHandler(us userService, ur *repo.UserRepo, jtmaker auth.Authenticator, log *zerolog.Logger) *UserHandler {
+	log = logger.ServiceLogger(log, "grpc_service")
 	return &UserHandler{
 		us:       us,
 		ur:       ur,
 		jwtMaker: jtmaker,
+		logger:   log,
 	}
 }

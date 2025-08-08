@@ -90,7 +90,7 @@ type Logininput struct {
 func (us *userService) Login(ctx context.Context, arg Logininput) (*AuthResult, error) {
 	v := validator.NewValidator()
 	v.Check(arg.Username != "", "username", "cannot be empty")
-	v.Check(regexp.MustCompile("^[a-zA-Z0-9]+$").MatchString(arg.Username), "username", "can only contain letters, numbers and spaces")
+	v.Check(regexp.MustCompile(`^[a-zA-Z0-9\s]+$`).MatchString(arg.Username), "username", "can only contain letters, numbers and spaces")
 	v.Check(arg.Password != "", "password", "cannot be empty")
 
 	if !v.Valid() {
@@ -99,7 +99,7 @@ func (us *userService) Login(ctx context.Context, arg Logininput) (*AuthResult, 
 
 	user, err := us.UserRepo.GetUser(ctx, arg.Username)
 	if err != nil {
-		if err == repo.ErrUserNotFound {
+		if errors.Is(err,repo.ErrUserNotFound ){
 			return nil, errorutil.NewAppError(errorutil.ErrBadRequest, "user not found", err)
 		}
 		return nil, errorutil.NewAppError(errorutil.ErrInternal, "internal server error:", err)
