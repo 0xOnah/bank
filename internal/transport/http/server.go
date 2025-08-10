@@ -41,12 +41,12 @@ func (r *Router) Serve(port string) error {
 	server := &http.Server{
 		Addr:         port,
 		Handler:      r.Mux,
-		ReadTimeout:  time.Second * 5,
+		ReadTimeout:  time.Second * 3,
 		WriteTimeout: time.Second * 10,
 		IdleTimeout:  time.Second * 30,
 	}
 
-	slog.Info("server starting", slog.String("port", ":8080"))
+	slog.Info("server starting", slog.String("port", server.Addr))
 	shutDown := make(chan error)
 	go func() {
 		err := server.ListenAndServe()

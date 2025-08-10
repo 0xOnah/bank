@@ -17,6 +17,7 @@ import (
 	"github.com/0xOnah/bank/internal/service"
 	grpctransport "github.com/0xOnah/bank/internal/transport/grpc"
 	httptransport "github.com/0xOnah/bank/internal/transport/http"
+	"github.com/0xOnah/bank/internal/transport/sdk/middleware"
 	"github.com/0xOnah/bank/pb"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/zerolog"
@@ -67,8 +68,8 @@ func main() {
 		logger.Fatal().Err(err).Msg("jwt-maker not initialized")
 	}
 	// RunHttpServer(store, config, auth)
-	RunGrpcServer(config, store, auth, logger)
-	// RunGatewayServer(config, store, auth, logger)
+	// RunGrpcServer(config, store, auth, logger)
+	RunGatewayServer(config, store, auth, logger)
 }
 
 func RunHttpServer(
@@ -145,7 +146,8 @@ func RunGatewayServer(
 	}
 
 	log.Info().Str("port", config.GRPC_SERVER_ADDRESS).Msg("starting grpc-gateway server")
-	err = http.Serve(listener, httpmux)
+	reqlog := middleware.LogRequest(log)
+	err = http.Serve(listener, reqlog(httpmux))
 	if err != nil {
 		log.Error().Err(err).Msg("failed to start-up grpc-gateway server")
 	}

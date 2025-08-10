@@ -33,7 +33,6 @@ func (a *AccountHandler) MapAccountRoutes(r *gin.Engine) {
 	r.POST("/accounts", middleware.Authenication(a.token), a.CreateAccount)
 	r.GET("/accounts/:id", middleware.Authenication(a.token), a.GetAccountByID)
 	r.GET("/accounts", middleware.Authenication(a.token), a.listAccount)
-
 }
 
 type CreateAccountRequest struct {
