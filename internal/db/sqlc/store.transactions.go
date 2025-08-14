@@ -6,23 +6,19 @@ import (
 	"fmt"
 )
 
-//	type Store interface {
-//		*Queries
-//		TransferTx(ctx context.Context, arg TransferTxParams) (*TransferTxResult, error)
-//	}
 type SQLStore struct {
 	*Queries
-	db *sql.DB
+	DB *sql.DB
 }
 
 func NewStore(db *sql.DB) *SQLStore {
 	return &SQLStore{
-		db:      db,
+		DB:      db,
 		Queries: New(db),
 	}
 }
 func (s *SQLStore) execTX(ctx context.Context, fn func(*Queries) error) error {
-	tx, err := s.db.BeginTx(ctx, nil)
+	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}

@@ -15,6 +15,7 @@ type Config struct {
 	REFRESH_TOKEN_DURATION  time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 	ENVIRONMENT             string        `mapstructure:"ENVIRONMENT"`
 	LEVEL                   string        `mapstructure:"LEVEL"`
+	REDIS_ADDRESS           string        `mapstructure:"REDIS_ADDRESS"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

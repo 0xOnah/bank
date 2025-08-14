@@ -51,7 +51,7 @@ func EqCreateUser(arg entity.User, password string) gomock.Matcher {
 }
 
 func TestCreateUser(t *testing.T) {
-	user, err := entity.NewUser("victor", "secret12345", "victor onah", "onahvictor@gmail.com")
+	user, err := entity.NewUser("hector", "secret12345", "hector king", "hector@gmail.com")
 	require.NoError(t, err)
 
 	type TestCases []struct {

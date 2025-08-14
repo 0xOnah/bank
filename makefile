@@ -12,9 +12,9 @@ help:
 run:
 	go run cmd/main.go
 
-## run/docker: Start Docker Compose
-.PHONY: run/docker
-run/docker:
+## docker: Start Docker Compose
+.PHONY: docker
+docker:
 	docker compose up --build
 
 ## integration-test: Run integration tests
@@ -109,6 +109,12 @@ proto:
 		 -I . --openapiv2_out=doc/swagger --openapiv2_opt=allow_merge \
 		proto/*.proto
 
+## evans: run the evans grpc client
 .PHONY: evans
 evans:
 	evans --host localhost -p 9090 -r repl
+
+## redis: runn the redis client   
+.PHONY: redis
+redis:
+	docker run --name redis -p 6379:6379 -d  redis:8.2.0-alpine
