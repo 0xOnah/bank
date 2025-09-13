@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -25,7 +26,10 @@ func NewRouter(accountHand *AccountHandler, transferHand *TransferHandler, userH
 	router := gin.Default()
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("currency", util.ValidCurrency)
+		if err := v.RegisterValidation("currency", util.ValidCurrency); err != nil {
+			log.Fatal("failed to register validation:", err)
+		}
+
 	}
 	accountHand.MapAccountRoutes(router)
 	transferHand.MapAccountRoutes(router)

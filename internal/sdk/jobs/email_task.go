@@ -14,7 +14,7 @@ type VerifyEmailPayload struct {
 	Username string
 }
 
-func NewVerifyEmailTask(username string) (*asynq.Task, error) {
+func TaskVerifyEmail(username string) (*asynq.Task, error) {
 	payload, err := json.Marshal(VerifyEmailPayload{Username: username})
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshall payload %w", err)

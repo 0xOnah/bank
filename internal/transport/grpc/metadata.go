@@ -37,7 +37,6 @@ func extractMetadata(ctx context.Context) *Metadata {
 			mdt.UserAgent = ua[0]
 		}
 
-		
 		ui := md[xForwardedFor]
 		if len(ui) > 0 {
 			//prevent storing private ip address as they are no use to us

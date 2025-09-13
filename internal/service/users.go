@@ -99,7 +99,7 @@ func (us *userService) Login(ctx context.Context, arg Logininput) (*AuthResult, 
 
 	user, err := us.UserRepo.GetUser(ctx, arg.Username)
 	if err != nil {
-		if errors.Is(err,repo.ErrUserNotFound ){
+		if errors.Is(err, repo.ErrUserNotFound) {
 			return nil, errorutil.NewAppError(errorutil.ErrBadRequest, "user not found", err)
 		}
 		return nil, errorutil.NewAppError(errorutil.ErrInternal, "internal server error:", err)
@@ -170,7 +170,7 @@ func (us *userService) RenewAccessToken(ctx context.Context, refreshToken string
 		return RenewAccessToken{}, errorutil.NewAppError(errorutil.ErrUnauthorized, "incorrect session user", err)
 	}
 
-	if session.RefreshTokenCheck(refreshToken)  {
+	if session.RefreshTokenCheck(refreshToken) {
 		return RenewAccessToken{}, errorutil.NewAppError(errorutil.ErrUnauthorized, "mismatched session token", err)
 	}
 

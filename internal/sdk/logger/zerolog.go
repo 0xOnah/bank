@@ -18,9 +18,11 @@ type ContextKey string
 
 const CtxKey ContextKey = "contextkey"
 
+type ENVIRONMENT string
+
 const (
-	Production  = "production"
-	Development = "development"
+	Production  ENVIRONMENT = "production"
+	Development ENVIRONMENT = "development"
 )
 
 func SetUpLogger(level zerolog.Level, environment string) (*zerolog.Logger, error) {
@@ -30,7 +32,7 @@ func SetUpLogger(level zerolog.Level, environment string) (*zerolog.Logger, erro
 	}
 
 	var output io.Writer
-	switch environment {
+	switch ENVIRONMENT(environment) {
 	case Development:
 		output = zerolog.ConsoleWriter{
 			Out:        os.Stdout,
@@ -55,7 +57,7 @@ func SetUpLogger(level zerolog.Level, environment string) (*zerolog.Logger, erro
 }
 
 func InitLogger(cfg *config.Config) (*zerolog.Logger, error) {
-	level := cfg.LEVEL
+	level := cfg.LOG_LEVEL
 	if level == "" {
 		level = "debug"
 	}

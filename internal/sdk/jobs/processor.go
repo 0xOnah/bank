@@ -26,13 +26,13 @@ type UserStore interface {
 	GetUser(ctx context.Context, username string) (*entity.User, error)
 }
 
-type JobService struct {
+type WorkerService struct {
 	server    *asynq.Server
 	userStore UserStore
 	logger    *zerolog.Logger
 }
 
-func NewJobService(redisOpt asynq.RedisClientOpt, usStore UserStore, logger *zerolog.Logger) TaskProcessor {
+func NewWorkerService(redisOpt asynq.RedisClientOpt, usStore UserStore, logger *zerolog.Logger) TaskProcessor {
 	server := asynq.NewServer(
 		redisOpt,
 		asynq.Config{
@@ -42,10 +42,10 @@ func NewJobService(redisOpt asynq.RedisClientOpt, usStore UserStore, logger *zer
 			},
 		},
 	)
-	return &JobService{server: server, userStore: usStore, logger: logger}
+	return &WorkerService{server: server, userStore: usStore, logger: logger}
 }
 
-func (rt *JobService) JobSendVerifyEmail(ctx context.Context, t *asynq.Task) error {
+func (rt *WorkerService) JobSendVerifyEmail(ctx context.Context, t *asynq.Task) error {
 	var payload VerifyEmailPayload
 	err := json.Unmarshal(t.Payload(), &payload)
 	if err != nil {
@@ -72,6 +72,7 @@ func (rt *JobService) JobSendVerifyEmail(ctx context.Context, t *asynq.Task) err
 	}
 
 	//Todo: send emai to user
+
 	_ = user
 	rt.logger.Info().
 		Str("type", t.Type()).
@@ -80,7 +81,7 @@ func (rt *JobService) JobSendVerifyEmail(ctx context.Context, t *asynq.Task) err
 	return nil
 }
 
-func (rt *JobService) Start() error {
+func (rt *WorkerService) Start() error {
 	mux := asynq.NewServeMux()
 	mux.HandleFunc(TypeEmailVerify, rt.JobSendVerifyEmail)
 

@@ -22,7 +22,6 @@ func (uh *UserHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequest
 			Email:          req.Email,
 			FullName:       req.FullName,
 		})
-
 		if err != nil {
 			grpcErr := MapValidationErrors(err)
 			if grpcErr != nil {
@@ -32,20 +31,18 @@ func (uh *UserHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequest
 				return status.Errorf(errorutil.MapErrorToGRPCStatus(appErr), appErr.Message)
 			}
 		}
-
-		//don't do this next time intead use the  cause this could lead to a long lived transaction
-		payload := jobs.VerifyEmailPayload{Username: user.Username}
-
-		err = uh.taskqueue.DistributeTaskVerifyEmail(ctx, &payload)
-		if err != nil {
-			uh.logger.Error().Err(err).Msg("failed to distribute task to send verify email")
-		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
+
+	payload := jobs.VerifyEmailPayload{Username: user.Username}
+	err = uh.taskqueue.JobVerifyEmail(ctx, &payload)
+	if err != nil {
+		uh.logger.Error().Err(err).Msg("jobVerifyEmail fail")
+	}
+
 	return &pb.CreateUserResponse{
 		User: &pb.User{
 			Username:          user.Username,

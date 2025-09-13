@@ -9,7 +9,7 @@ import (
 )
 
 type TaskDistributor interface {
-	DistributeTaskVerifyEmail(context.Context, *VerifyEmailPayload) error
+	JobVerifyEmail(context.Context, *VerifyEmailPayload) error
 }
 
 type TaskQueue struct {
@@ -23,8 +23,8 @@ func NewTaskQueue(redisOpt asynq.RedisClientOpt, logger *zerolog.Logger) TaskDis
 }
 
 // taskcreation and distribution
-func (jd *TaskQueue) DistributeTaskVerifyEmail(ctx context.Context, payload *VerifyEmailPayload) error {
-	taskJob, err := NewVerifyEmailTask(payload.Username)
+func (jd *TaskQueue) JobVerifyEmail(ctx context.Context, payload *VerifyEmailPayload) error {
+	taskJob, err := TaskVerifyEmail(payload.Username)
 	if err != nil {
 		jd.logger.Error().
 			Err(err).

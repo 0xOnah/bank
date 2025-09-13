@@ -35,15 +35,11 @@ func randomAccount() *entity.Account {
 func requireBodyMatch(t *testing.T, body *bytes.Buffer, account *entity.Account) {
 	t.Helper()
 
-	var got entity.Account
-	err := json.Unmarshal(body.Bytes(), &got)
-	t.Log(got)
+	// var got entity.Account
+	got := body.Bytes()
+	data, err := json.Marshal(account)
 	require.NoError(t, err)
-	require.Equal(t, account.ID, got.ID)
-	require.Equal(t, account.Owner, got.Owner)
-	require.Equal(t, account.Balance, got.Balance)
-	require.Equal(t, account.Currency, got.Currency)
-
+	require.JSONEq(t, string(data), string(got))
 }
 
 func TestGetAccountByID(t *testing.T) {

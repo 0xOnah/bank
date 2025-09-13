@@ -10,9 +10,9 @@ import (
 	"github.com/0xOnah/bank/internal/entity"
 	"github.com/0xOnah/bank/internal/sdk/auth"
 	"github.com/0xOnah/bank/internal/sdk/netutil"
+	"github.com/0xOnah/bank/internal/sdk/util"
 	"github.com/0xOnah/bank/internal/service"
 	"github.com/0xOnah/bank/internal/transport/sdk/errorutil"
-	"github.com/0xOnah/bank/internal/sdk/util"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )

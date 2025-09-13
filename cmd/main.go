@@ -38,13 +38,15 @@ func main() {
 
 	logger, err := logger.InitLogger(&config)
 	if err != nil {
-		log.Fatal().Err(err).Send() // using global log to kill program if our custom logger is not initizalied
+		// using global log to kill program if our custom logger is not initizalied
+		log.Fatal().Err(err).Send()
 	}
 
 	//db setup
+	logger.Info().Msg(config.DSN)
 	database, err := db.NewDBClient(config.DSN)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("invalid database DSN")
+		logger.Fatal().Err(err).Msg("invalid database.DSN")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
@@ -69,7 +71,6 @@ func main() {
 		Addr: config.REDIS_ADDRESS,
 	}
 	taskQueue := jobs.NewTaskQueue(redisOpts, logger)
-	// workers := jobs.NewJobService()
 
 	//authenticator
 	auth, err := auth.NewJWTMaker(config.TOKEN_SYMMETRIC_KEY)
@@ -84,7 +85,7 @@ func main() {
 
 func runJobService(redisOpts asynq.RedisClientOpt, store *sqlc.SQLStore, logger *zerolog.Logger) {
 	UserRepo := repo.NewUserRepo(store)
-	taskProcessor := jobs.NewJobService(redisOpts, UserRepo, logger)
+	taskProcessor := jobs.NewWorkerService(redisOpts, UserRepo, logger)
 	log.Info().Msg("starting task processor")
 	err := taskProcessor.Start()
 	if err != nil {
@@ -158,7 +159,9 @@ func RunGatewayServer(
 
 	httpmux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"}); err != nil {
+			w.WriteHeader(500)
+		}
 	})
 
 	listener, err := net.Listen("tcp", config.HTTP_SERVER_ADDRESS)

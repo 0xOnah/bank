@@ -33,7 +33,10 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal("failed to create migrate instance", err)
 	}
-	ma.Up()
+	err = ma.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		log.Fatal("migration failed:", err)
+	}
 	testQueries = New(testDB)
 
 	os.Exit(m.Run())

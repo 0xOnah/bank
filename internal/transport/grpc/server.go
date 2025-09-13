@@ -19,7 +19,6 @@ type userService interface {
 	RenewAccessToken(ctx context.Context, refreshToken string) (service.RenewAccessToken, error)
 }
 
-
 type UserHandler struct {
 	pb.UnimplementedUserServiceServer
 	us        userService
