@@ -1,0 +1,13 @@
+# Ignore VCS and configs
+.git
+.github/
+.gitignore
+sqlc.yaml
+Dockerfile
+Makefile
+vendor/
+
+
+# Ignore test dirs and test files everywhere
+**/test/
+**/*_test.go

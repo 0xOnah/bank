@@ -3,7 +3,6 @@ package grpctransport
 import (
 	"context"
 	"database/sql"
-	"log/slog"
 
 	"github.com/0xOnah/bank/internal/db/repo"
 	"github.com/0xOnah/bank/internal/sdk/auth"
@@ -14,7 +13,7 @@ import (
 )
 
 func (uh *UserHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
-	authPayload, err := uh.authorization(ctx)
+	authPayload, err := uh.authenication(ctx)
 	if err != nil {
 		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
@@ -28,14 +27,12 @@ func (uh *UserHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest
 	if req.Password != nil {
 		hashed, err := auth.HashPassword(*req.Password)
 		if err != nil {
-			slog.Error("failed to hash password", slog.Any("error", err))
 			return nil, status.Error(codes.Internal, "failed to update user")
 		}
 		password = &hashed
 	}
 
 	if req.Username == "" {
-		slog.Error("username not provided", slog.Any("error", err))
 		return nil, status.Error(codes.InvalidArgument, "username must be provided")
 	}
 
@@ -47,10 +44,8 @@ func (uh *UserHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest
 	})
 	if err != nil {
 		if err == sql.ErrNoRows {
-			slog.Error("user does not exist", slog.Any("error", err))
 			return nil, status.Error(codes.NotFound, "user does not exist")
 		}
-		slog.Error("internal server error", slog.Any("error", err))
 		return nil, status.Error(codes.Internal, "internal server error")
 
 	}

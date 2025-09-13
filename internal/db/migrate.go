@@ -62,8 +62,7 @@ func (dc *DBClient) MigrateUP() error {
 	if err != nil {
 		return err
 	}
-	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
+	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
 		return err
 	}
 	return nil

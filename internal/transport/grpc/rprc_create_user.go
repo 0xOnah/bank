@@ -3,6 +3,8 @@ package grpctransport
 import (
 	"context"
 
+	"github.com/0xOnah/bank/internal/db/sqlc"
+	"github.com/0xOnah/bank/internal/sdk/jobs"
 	"github.com/0xOnah/bank/internal/service"
 	"github.com/0xOnah/bank/internal/transport/sdk/errorutil"
 	"github.com/0xOnah/bank/pb"
@@ -11,26 +13,40 @@ import (
 )
 
 func (uh *UserHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
-	user, err := uh.us.CreateUser(ctx, service.CreateUserInput{
-		Username: req.Username,
-		Password: req.Password,
-		Email:    req.Email,
-		Fullname: req.FullName,
+	var user *sqlc.User
+	err := uh.ur.WithTx(ctx, func(q *sqlc.Queries) error {
+		var err error
+		user, err = q.CreateUser(ctx, sqlc.CreateUserParams{
+			Username:       req.Username,
+			HashedPassword: req.Password,
+			Email:          req.Email,
+			FullName:       req.FullName,
+		})
+		if err != nil {
+			grpcErr := MapValidationErrors(err)
+			if grpcErr != nil {
+				return grpcErr
+			}
+			if appErr, ok := err.(*errorutil.AppError); ok {
+				return status.Errorf(errorutil.MapErrorToGRPCStatus(appErr), appErr.Message)
+			}
+		}
+		return nil
 	})
-
 	if err != nil {
-		grpcErr := MapValidationErrors(err)
-		if grpcErr != nil {
-			return nil, grpcErr
-		}
-		if appErr, ok := err.(*errorutil.AppError); ok {
-			return nil, status.Errorf(errorutil.MapErrorToGRPCStatus(appErr), appErr.Message)
-		}
+		return nil, err
 	}
+
+	payload := jobs.VerifyEmailPayload{Username: user.Username}
+	err = uh.taskqueue.JobVerifyEmail(ctx, &payload)
+	if err != nil {
+		uh.logger.Error().Err(err).Msg("jobVerifyEmail fail")
+	}
+
 	return &pb.CreateUserResponse{
 		User: &pb.User{
 			Username:          user.Username,
-			Email:             user.Email.String(),
+			Email:             user.Email,
 			FullName:          user.FullName,
 			PasswordChangedAt: timestamppb.New(user.PasswordChangedAt),
 			CreatedAt:         timestamppb.New(user.CreatedAt),

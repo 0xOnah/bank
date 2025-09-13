@@ -13,12 +13,15 @@ import (
 	"github.com/0xOnah/bank/internal/db/repo"
 	"github.com/0xOnah/bank/internal/db/sqlc"
 	"github.com/0xOnah/bank/internal/sdk/auth"
+	"github.com/0xOnah/bank/internal/sdk/jobs"
 	"github.com/0xOnah/bank/internal/sdk/logger"
 	"github.com/0xOnah/bank/internal/service"
 	grpctransport "github.com/0xOnah/bank/internal/transport/grpc"
 	httptransport "github.com/0xOnah/bank/internal/transport/http"
+	"github.com/0xOnah/bank/internal/transport/sdk/middleware"
 	"github.com/0xOnah/bank/pb"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
@@ -35,13 +38,15 @@ func main() {
 
 	logger, err := logger.InitLogger(&config)
 	if err != nil {
-		log.Fatal().Err(err).Send() // using global log to kill program if our custom logger is not initizalied
+		// using global log to kill program if our custom logger is not initizalied
+		log.Fatal().Err(err).Send()
 	}
 
 	//db setup
+	logger.Info().Msg(config.DSN)
 	database, err := db.NewDBClient(config.DSN)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("invalid database DSN")
+		logger.Fatal().Err(err).Msg("invalid database.DSN")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
@@ -57,9 +62,15 @@ func main() {
 	if err != nil {
 		logger.Fatal().Err(err).Msg("failed to run up-migration")
 	}
-	logger.Info().Msg("database up migration successful")
+	logger.Info().Msg("database migration successful")
 
 	store := sqlc.NewStore(database.Client)
+
+	//redis
+	redisOpts := asynq.RedisClientOpt{
+		Addr: config.REDIS_ADDRESS,
+	}
+	taskQueue := jobs.NewTaskQueue(redisOpts, logger)
 
 	//authenticator
 	auth, err := auth.NewJWTMaker(config.TOKEN_SYMMETRIC_KEY)
@@ -67,10 +78,20 @@ func main() {
 		logger.Fatal().Err(err).Msg("jwt-maker not initialized")
 	}
 	// RunHttpServer(store, config, auth)
-	RunGrpcServer(config, store, auth, logger)
+	go runJobService(redisOpts, store, logger)
+	RunGrpcServer(config, store, auth, logger, taskQueue)
 	// RunGatewayServer(config, store, auth, logger)
 }
 
+func runJobService(redisOpts asynq.RedisClientOpt, store *sqlc.SQLStore, logger *zerolog.Logger) {
+	UserRepo := repo.NewUserRepo(store)
+	taskProcessor := jobs.NewWorkerService(redisOpts, UserRepo, logger)
+	log.Info().Msg("starting task processor")
+	err := taskProcessor.Start()
+	if err != nil {
+		log.Fatal().Err(err).Msg("cannot create redis server")
+	}
+}
 func RunHttpServer(
 	store *sqlc.SQLStore,
 	config config.Config,
@@ -103,6 +124,8 @@ func RunGatewayServer(
 	store *sqlc.SQLStore,
 	tokenMaker auth.Authenticator,
 	log *zerolog.Logger,
+	taskqueue jobs.TaskDistributor,
+
 ) {
 	ur := repo.NewUserRepo(store)
 	sr := repo.NewSessionRepo(store)
@@ -110,7 +133,7 @@ func RunGatewayServer(
 
 	usrSvc := service.NewUserService(ur, tokenMaker, config, sr)
 	svcLogger := logger.ServiceLogger(log, "auth_Service")
-	UserHandler := grpctransport.NewUserHandler(usrSvc, UserRepo, tokenMaker, svcLogger)
+	UserHandler := grpctransport.NewUserHandler(usrSvc, UserRepo, tokenMaker, svcLogger, taskqueue)
 
 	httpGateWayMux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
 		MarshalOptions: protojson.MarshalOptions{
@@ -125,7 +148,7 @@ func RunGatewayServer(
 
 	err := pb.RegisterUserServiceHandlerServer(ctx, httpGateWayMux, UserHandler)
 	if err != nil {
-
+		log.Fatal().Err(err).Msg("failed to register userHandler with the server")
 	}
 
 	httpmux := http.NewServeMux()
@@ -136,18 +159,21 @@ func RunGatewayServer(
 
 	httpmux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"}); err != nil {
+			w.WriteHeader(500)
+		}
 	})
 
 	listener, err := net.Listen("tcp", config.HTTP_SERVER_ADDRESS)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create grpc-gateway listener")
+		log.Fatal().Err(err).Msg("failed to create grpc-gateway listener")
 	}
 
 	log.Info().Str("port", config.GRPC_SERVER_ADDRESS).Msg("starting grpc-gateway server")
-	err = http.Serve(listener, httpmux)
+	reqlog := middleware.LogRequest(log)
+	err = http.Serve(listener, reqlog(httpmux))
 	if err != nil {
-		log.Error().Err(err).Msg("failed to start-up grpc-gateway server")
+		log.Fatal().Err(err).Msg("failed to start-up grpc-gateway server")
 	}
 }
 
@@ -157,12 +183,13 @@ func RunGrpcServer(
 	store *sqlc.SQLStore,
 	tokenMaker auth.Authenticator,
 	log *zerolog.Logger,
+	taskqueue jobs.TaskDistributor,
 ) {
 	ur := repo.NewUserRepo(store)
 	sr := repo.NewSessionRepo(store)
 	UserRepo := repo.NewUserRepo(store)
 	usrSvc := service.NewUserService(ur, tokenMaker, config, sr)
-	UserHandler := grpctransport.NewUserHandler(usrSvc, UserRepo, tokenMaker, log)
+	UserHandler := grpctransport.NewUserHandler(usrSvc, UserRepo, tokenMaker, log, taskqueue)
 
 	logger := grpctransport.LoggingInterceptor(log)
 	recoverPanic := grpctransport.UnaryRecoverPanicInterceptor(log)

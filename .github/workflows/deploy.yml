@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  deploy:
     name: Build image
     runs-on: ubuntu-latest
     steps:
@@ -17,7 +17,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-north-1  #AWS region of my credentials
+          aws-region: eu-north-1
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -25,8 +25,8 @@ jobs:
 
       - name: Load secrets and save to app.env
         run: |
-            aws secretsmanager get-secret-value --region us-east-1 --secret-id bankapp-prod --query SecretString --output text | jq 'to_entries|map("\(.key)=\(.value)")'.[] -r > app.env
-            cat app.env  # Print the contents for debugging
+            aws secretsmanager get-secret-value --region us-east-1 --secret-id bankapp-prod --query SecretString \
+              --output text | jq 'to_entries|map("\(.key)=\(.value)")'.[] -r > app.env
 
       - name: Build and push Docker image to ECR
         env:
@@ -34,5 +34,5 @@ jobs:
           REPOSITORY: bankapp
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker build --target runtime -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG

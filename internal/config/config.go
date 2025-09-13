@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/spf13/viper"
@@ -14,7 +15,8 @@ type Config struct {
 	ACCESS_TOKEN_DURATATION time.Duration `mapstructure:"ACCESS_TOKEN_DURATATION"`
 	REFRESH_TOKEN_DURATION  time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 	ENVIRONMENT             string        `mapstructure:"ENVIRONMENT"`
-	LEVEL                   string        `mapstructure:"LEVEL"`
+	LOG_LEVEL               string        `mapstructure:"LOG_LEVEL"`
+	REDIS_ADDRESS           string        `mapstructure:"REDIS_ADDRESS"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
@@ -23,9 +25,14 @@ func LoadConfig(path string) (config Config, err error) {
 	viper.SetConfigType("env")
 	viper.AutomaticEnv()
 
+	//reading from enviroment varaibles
+	if err = viper.BindEnv("DSN"); err != nil {
+		return Config{}, fmt.Errorf("bind 'DSN' env variable: %w", err)
+	}
+
 	err = viper.ReadInConfig()
 	if err != nil {
-		return
+		return Config{}, fmt.Errorf("no config file found or error reading config: %v", err)
 	}
 
 	err = viper.Unmarshal(&config)

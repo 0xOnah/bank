@@ -98,3 +98,18 @@ func (ur *UserRepo) UpdateUser(ctx context.Context, arg UpdateUserParams) (*enti
 	}
 	return ToUser(user)
 }
+
+func (ur *UserRepo) WithTx(ctx context.Context, fn func(*sqlc.Queries) error) error {
+	tx, err := ur.db.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	queries := sqlc.New(tx)
+	err = fn(queries)
+
+	if err != nil {
+		return tx.Rollback()
+	}
+	return tx.Commit()
+}

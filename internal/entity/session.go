@@ -15,3 +15,19 @@ type Session struct {
 	IsBlocked    bool      `json:"is_blocked"`
 	ExpiresAt    time.Time `json:"expires_at"`
 }
+
+func (ses *Session) IsSessionBlocked() bool {
+	return ses.IsBlocked
+}
+
+func (ses *Session) UsernameCheck(username string) bool {
+	return ses.Username != username
+}
+
+func (ses *Session) RefreshTokenCheck(token string) bool {
+	return ses.RefreshToken != token
+}
+
+func (ses *Session) IsSessionExpired() bool {
+	return time.Now().After(ses.ExpiresAt)
+}

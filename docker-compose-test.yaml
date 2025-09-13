@@ -1,0 +1,7 @@
+services:
+  simplebank:
+    command:
+      - "go"
+      - "test"
+      - "-v"
+      - "./..."
