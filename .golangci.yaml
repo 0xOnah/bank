@@ -9,10 +9,12 @@ linters:
     - errcheck
     - staticcheck
     - unused
+  exclusions:
+    rules:
+      - linters:
+          - golint
+        text: "should have comment"
 
 formatters:
   enable:
     - gofmt
-    
-issues:
-  exclude-use-default: false
